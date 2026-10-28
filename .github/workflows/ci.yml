@@ -1,0 +1,38 @@
+name: CI
+on:
+  pull_request:
+  push: { branches: [main] }
+permissions: { contents: read }
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/backend } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: npm, cache-dependency-path: apps/backend/package-lock.json }
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+  storefront:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/storefront } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: npm, cache-dependency-path: apps/storefront/package-lock.json }
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_SITE_URL: https://staging.example.com
+          NEXT_PUBLIC_MEDUSA_BACKEND_URL: https://api-staging.example.com
+          BUILD_WITHOUT_BACKEND: "1" # pas de backend en CI ; jamais utilisé au déploiement
+  secrets-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

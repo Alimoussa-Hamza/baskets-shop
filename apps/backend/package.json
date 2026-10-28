@@ -1,0 +1,33 @@
+{
+  "name": "baskets-backend",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.22.0"
+  },
+  "scripts": {
+    "dev": "medusa develop",
+    "build": "medusa build",
+    "start": "medusa start",
+    "db:migrate": "medusa db:migrate",
+    "db:generate": "medusa db:generate",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test --experimental-strip-types src/lib/"
+  },
+  "dependencies": {
+    "@medusajs/admin-sdk": "2.22.1",
+    "@medusajs/cli": "2.22.1",
+    "@medusajs/framework": "2.22.1",
+    "@medusajs/medusa": "2.22.1",
+    "nodemailer": "10.2.1"
+  },
+  "devDependencies": {
+    "@swc/core": "1.7.28",
+    "@types/node": "24.19.2",
+    "@types/nodemailer": "8.0.2",
+    "@types/react": "18.3.12",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "typescript": "5.9.3"
+  }
+}

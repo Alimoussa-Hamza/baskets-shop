@@ -1,0 +1,13 @@
+name: Deploy
+# Squelette : cibles à définir à l étape 5 (hébergeur choisi selon budget). Secrets par environnement GitHub.
+on:
+  workflow_dispatch:
+    inputs:
+      environment: { description: "staging ou production", required: true, default: staging, type: choice, options: [staging, production] }
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}   # protections + secrets séparés (clés Stripe test vs live)
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "TODO - build images backend (server + worker) + storefront, puis npm run db:migrate AVANT de basculer le trafic"
