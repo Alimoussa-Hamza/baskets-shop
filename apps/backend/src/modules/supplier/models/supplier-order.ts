@@ -9,6 +9,11 @@ const SupplierOrder = model.define("supplier_order", {
   tracking_number: model.text().nullable(),
   cost_total_cents: model.number().nullable(),
   placed_at: model.dateTime().nullable(),
+  carrier: model.text().nullable(),
+  shipped_at: model.dateTime().nullable(),
+  // Instantané des lignes transmises : { lines: [{ line_item_id, title, variant, sku, quantity, unit_cost_cents }] }
+  lines: model.json().nullable(),
+  last_error: model.text().nullable(), // dernier échec de transmission (vide = OK)
   supplier: model.belongsTo(() => Supplier, { mappedBy: "orders" }),
 })
 

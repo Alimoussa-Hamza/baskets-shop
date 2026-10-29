@@ -60,8 +60,19 @@ docker-compose.yml   Postgres 17, Redis 7, Mailpit ; profil `app` = stack compl�
   - `withdrawal` : demandes de rétractation (brouillon → accusé horodaté).
   - `review` : avis, statut de modération, indicateur « achat vérifié ».
   - `size-guide` : tables longueur de pied → pointure EU.
-  - `supplier` + `supplier_order` : fournisseurs UE, accord écrit de revente, commandes fournisseur.
+  - `supplier` + `supplier_order` : fournisseurs, accord écrit de revente, commandes fournisseur (voir §5 bis).
 - Génération des migrations : `npx medusa db:generate withdrawal` (idem pour les autres), puis `npm run db:migrate`.
+
+## 5 bis. Dropshipping : connecteur fournisseur
+
+Décision du 29/10/2026 : CJdropshipping pour démarrer, **uniquement des modèles stockés en entrepôt UE** ; private label (Portugal) ensuite. Depuis le 01/07/2026, chaque article importé hors UE paie un droit forfaitaire de 3 € (règlement (UE) 2026/382) [V, source secondaire].
+
+- **Lien produit → fournisseur** : métadonnées de variante `supplier_id`, `supplier_sku` (pour CJ : l'id de variante « vid »), `supplier_cost_cents` (prix d'achat HT). Un fournisseur = un entrepôt ; pour CJ, `country` = pays de l'entrepôt (`fromCountryCode`) et `logistic_name` = transporteur.
+- **Flux** : `order.placed` → `src/subscribers/order-placed-supplier.ts` crée une `supplier_order` par fournisseur (idempotent) et la transmet (`src/lib/supplier-dispatch.ts`) : API CJ `createOrderV2` (`src/lib/cj.ts`) ou bon de commande par e-mail. Échec → statut « à passer » + `last_error`, relançable.
+- **CJ** : commandes créées avec `payType=3` (création seule) : **aucun paiement automatique**, validation et paiement dans l'espace CJ. `CJ_SANDBOX=1` pour les essais. Limite API : 1 appel/s. Jeton : 180 jours, gardé en mémoire.
+- **Admin** : page « Commandes fournisseur » (`src/admin/routes/supplier-orders`) ; saisie du suivi → e-mail « votre commande est en route » au client. Routes : `GET /admin/supplier-orders`, `POST /admin/supplier-orders/:id/ship`, `POST /admin/supplier-orders/:id/retry`.
+- **Testé en local le 29/10/2026** : transmission par e-mail (Mailpit), coût d'achat, saisie du suivi + e-mail client, idempotence, erreur CJ sans clé. **Non testé** : appel réel à l'API CJ (pas de compte), webhooks CJ.
+- **Reste** : import du catalogue CJ, synchro stock/prix planifiée, récupération automatique du suivi (webhook CJ), page admin de gestion des fournisseurs (aujourd'hui : script `src/scripts/seed-supplier-demo.ts` pour la démo).
 
 ## 6. Paiement et stock
 

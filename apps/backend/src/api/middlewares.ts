@@ -28,8 +28,14 @@ export const ConfirmWithdrawalSchema = z.object({
   email: z.string().email().max(254),
 })
 
+export const ShipSupplierOrderSchema = z.object({
+  tracking_number: z.string().trim().min(3).max(100),
+  carrier: z.string().trim().max(100).optional(),
+})
+
 export default defineMiddlewares({
   routes: [
+    { matcher: "/admin/supplier-orders/:id/ship", method: "POST", middlewares: [validateAndTransformBody(ShipSupplierOrderSchema)] },
     { matcher: "/store/withdrawals/start", method: "POST", middlewares: [rateLimit, validateAndTransformBody(StartWithdrawalSchema)] },
     { matcher: "/store/withdrawals/confirm", method: "POST", middlewares: [rateLimit, validateAndTransformBody(ConfirmWithdrawalSchema)] },
   ],
