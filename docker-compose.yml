@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-baskets}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?définir POSTGRES_PASSWORD dans .env}
       POSTGRES_DB: ${POSTGRES_DB:-baskets}
-    ports: ["127.0.0.1:5432:5432"]
+    ports: ["127.0.0.1:${POSTGRES_PORT:-5432}:5432"]
     volumes: ["postgres-data:/var/lib/postgresql/data"]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-baskets}"]
