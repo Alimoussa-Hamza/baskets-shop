@@ -30,8 +30,18 @@ cd apps/backend && npm run typecheck && npm test
 cd apps/storefront && npm run typecheck
 ```
 
+Parcours client de bout en bout (Playwright, téléphone + ordinateur), sur la stack locale lancée avec `NEXT_PUBLIC_TEST_PAYMENT=1` et le SMTP backend vers Mailpit (`SMTP_HOST=localhost`, `SMTP_PORT=1025`) :
+
+```bash
+cd e2e
+npm ci && npm run install-browser        # une seule fois
+npm run e2e                               # crée de vraies commandes dans la base LOCALE
+ADMIN_EMAIL=… ADMIN_PASSWORD=… npm run e2e   # + vérifie la transmission au fournisseur
+npm run e2e:report                        # rapport HTML (captures et traces en cas d'échec)
+```
+
 ## État
 
-Squelette qui tourne en local : migrations générées (`src/modules/*/migrations`), parcours de rétractation testé de bout en bout. Pour tester sans vraie boutique : `npx medusa exec ./src/scripts/seed-test-order.ts` crée la commande n°1 (client.test@example.com). Reste : e-mail d'accusé de rétractation (obligatoire), catalogue, panier, Stripe. Détail dans `docs/ARCHITECTURE.md` §11.
+Tourne en local de bout en bout (29/10/2026) : catalogue, panier, checkout avec paiement de test, e-mails (confirmation, accusé de rétractation, expédition), rétractation, connecteur fournisseur dropshipping (e-mail testé, API CJ codée mais pas encore appelée). Données de démo : `npx medusa exec ./src/scripts/seed-demo.ts` puis `./src/scripts/seed-supplier-demo.ts`. Reste notamment : Stripe réel, import du catalogue CJ, pages légales relues, déploiement. Détail dans `docs/ARCHITECTURE.md` §5 bis et §11.
 
 Aucun secret dans git : `.env*` est ignoré, seuls les `.env.example` sont versionnés.
