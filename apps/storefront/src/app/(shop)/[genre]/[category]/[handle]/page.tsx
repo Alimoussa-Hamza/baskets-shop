@@ -106,7 +106,7 @@ export default async function ProductPage({ params }: P) {
       {others.length > 0 && (
         <section aria-labelledby="similaires" className="mt-16">
           <h2 id="similaires" className="text-2xl font-semibold">Vous aimerez aussi</h2>
-          <ul className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">{others.map((o) => <li key={o.id}><ProductCard c={toCard(o)} /></li>)}</ul>
+          <ul className="gallery mt-6 grid-cols-2 lg:grid-cols-4">{others.map((o) => <li key={o.id}><ProductCard c={toCard(o)} /></li>)}</ul>
         </section>)}
     </>
   )

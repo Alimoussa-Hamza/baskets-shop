@@ -128,7 +128,7 @@ export function ProductGrid({ cards }: { cards: Card[] }) {
             <div className="card p-8 text-center"><p className="font-medium">Aucun modèle ne correspond à ces filtres.</p>
               <button type="button" onClick={reset} className="btn-secondary mt-4">Effacer les filtres</button></div>
           ) : (<>
-            <ul className="grid grid-cols-2 gap-4 md:grid-cols-3">
+            <ul className="gallery grid-cols-2 md:grid-cols-3">
               {list.slice(0, shown).map((c, i) => <li key={c.id}><ProductCard c={c} priority={i < 3} /></li>)}
             </ul>
             <div className="mt-8 flex items-center justify-between text-sm text-muted">

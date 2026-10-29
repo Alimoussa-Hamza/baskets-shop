@@ -33,4 +33,11 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; letter-spacing:
 @utility field { @apply h-12 w-full rounded-[8px] border border-line bg-white px-4 text-[16px] text-ink; }
 @utility label { @apply mb-1 block text-sm font-medium text-ink; }
 @utility card { @apply rounded-[12px] border border-line bg-white; }
+/* Grille « galerie » (sites de référence : Veja, Allbirds) : cartes bord à bord séparées par un filet d'1 px */
+/* Filets portés par les cases (pas par le fond de la grille) : une dernière ligne incomplète reste propre */
+@utility gallery { @apply grid border-l border-t border-line; & > * { @apply border-b border-r border-line; } }
+/* Bandeau défilant ; arrêté si l'utilisateur limite les animations (WCAG 2.2.2) */
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@utility animate-marquee { animation: marquee 32s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .animate-marquee { animation: none; } }
 @utility link { @apply text-accent underline underline-offset-2 hover:text-accent-ink; }

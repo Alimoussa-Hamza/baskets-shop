@@ -22,11 +22,19 @@ async function menuSections(): Promise<MenuSection[]> {
 
 export async function Header() {
   const sections = await menuSections()
+  const messages = [`Livraison offerte dès ${eur(FREE_SHIPPING_THRESHOLD).replace(",00", "")}`, "Retours sous 14 jours", "Guide des tailles en cm", "Paiement sécurisé"]
   return (
     <>
-      <p className="bg-ink px-4 py-2 text-center text-xs font-medium uppercase tracking-[0.12em] text-white">
-        Livraison offerte dès {eur(FREE_SHIPPING_THRESHOLD).replace(",00", "")} · Retours sous 14 jours
-      </p>
+      {/* Bandeau défilant (référence : Axel Arigato) ; contenu doublé pour une boucle continue, lu une seule fois */}
+      <div className="overflow-hidden bg-[#e7ecff] py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-ink">
+        <p className="sr-only">{messages.join(" · ")}</p>
+        <div aria-hidden="true" className="animate-marquee flex w-max">
+          {[0, 1].map((k) => (
+            <span key={k} className="flex shrink-0">
+              {[...messages, ...messages].map((m, i) => <span key={i} className="flex items-center px-8"><span className="mr-8 text-accent">●</span>{m}</span>)}
+            </span>))}
+        </div>
+      </div>
       {/* Barre collante : reste accessible au défilement, fond translucide */}
       <header className="sticky top-0 z-40 border-b border-line bg-paper/85 backdrop-blur-md">
         <div className="mx-auto grid h-16 max-w-[1200px] grid-cols-[1fr_auto_1fr] items-center px-4">

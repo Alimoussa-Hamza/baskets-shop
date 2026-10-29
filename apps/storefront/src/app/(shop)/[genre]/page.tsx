@@ -5,6 +5,8 @@ import { listProducts } from "@/lib/medusa"
 import { GENRES, toCard } from "@/lib/catalog"
 import { CATEGORY_LABEL, GENRE_INTRO } from "@/lib/content"
 import { ProductGrid } from "@/components/product-grid"
+import { CategoryHero } from "@/components/category-hero"
+import { HelpStrip } from "@/components/help-strip"
 import { JsonLd } from "@/components/json-ld"
 import { SITE_URL } from "@/lib/site"
 import { pageMeta } from "@/lib/seo"
@@ -26,19 +28,19 @@ export default async function GenrePage({ params }: { params: Promise<{ genre: s
   if (!g) notFound()
   const products = (await listProducts()).filter((p) => p.metadata?.gender === g.gender)
   const cats = [...new Set(products.map((p) => p.categories?.[0]?.handle).filter((x): x is string => !!x))]
+  const cards = products.map(toCard)
   return (
     <>
       <JsonLd data={{ "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [
         { "@type": "ListItem", position: 1, name: "Accueil", item: SITE_URL },
         { "@type": "ListItem", position: 2, name: g.label, item: `${SITE_URL}/${genre}` }] }} />
-      <nav aria-label="Fil d'Ariane" className="text-sm text-muted"><Link href="/" className="hover:text-accent">Accueil</Link> <span aria-hidden="true">›</span> <span className="text-ink">{g.label}</span></nav>
-      <h1 className="mt-4 text-4xl font-bold md:text-5xl">{g.label}</h1>
-      <p className="mt-4 max-w-2xl text-muted">{GENRE_INTRO[genre]}</p>
-      {cats.length > 0 && (
-        <ul className="mt-6 flex flex-wrap gap-2" aria-label="Catégories">
-          {cats.map((c) => <li key={c}><Link href={`/${genre}/${c}`} className="inline-flex h-11 items-center rounded-full border border-line bg-white px-4 text-sm hover:border-ink">{CATEGORY_LABEL[c] ?? c}</Link></li>)}
-        </ul>)}
-      <div className="mt-10"><ProductGrid cards={products.map(toCard)} /></div>
+      <CategoryHero
+        color={genre === "baskets-femme" ? "#d9cdb8" : "#1f4fff"}
+        title={g.label} intro={GENRE_INTRO[genre]} cards={cards}
+        crumbs={<><Link href="/" className="hover:text-accent">Accueil</Link> <span aria-hidden="true">›</span> <span className="text-ink">{g.label}</span></>}
+        chips={cats.map((c) => ({ label: CATEGORY_LABEL[c] ?? c, href: `/${genre}/${c}`, count: products.filter((p) => p.categories?.some((x) => x.handle === c)).length }))} />
+      <div className="mt-10"><ProductGrid cards={cards} /></div>
+      <HelpStrip />
     </>
   )
 }

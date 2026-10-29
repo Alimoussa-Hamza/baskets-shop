@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { listProducts } from "@/lib/medusa"
-import { eur, toCard } from "@/lib/catalog"
-import { ProductCard } from "@/components/product-card"
+import { GENRES, eur, toCard } from "@/lib/catalog"
+import { NewArrivals } from "@/components/new-arrivals"
 import { SneakerArt, tint } from "@/components/sneaker-art"
 import { FREE_SHIPPING_THRESHOLD, SITE_NAME } from "@/lib/site"
 import { JsonLd } from "@/components/json-ld"
@@ -31,32 +31,44 @@ const categories = [
   { label: "Montantes", hint: "Maintien et caractère", href: "/baskets-femme/montantes", color: "#111111" },
 ]
 
+// Les deux univers en écran partagé (référence : Axel Arigato), chacun avec sa couleur d'ambiance.
+const universes = [
+  { slug: "baskets-femme", label: "Femme", hint: "Urbaines, montantes, essentiels", bg: "#efe6d8", fg: "text-ink", sneaker: "#ffffff", chip: "bg-white text-ink" },
+  { slug: "baskets-homme", label: "Homme", hint: "Running, urbaines", bg: "#15171d", fg: "text-white", sneaker: "#1f4fff", chip: "bg-white text-ink" },
+]
+
 export default async function Home() {
   const products = await listProducts()
-  const cards = products.slice(0, 4).map(toCard)
   const from = Math.min(...products.map(toCard).map((c) => c.price).filter((p) => p > 0))
+  const tabs = Object.entries(GENRES).map(([slug, g]) => ({
+    key: slug, label: g.label.replace("Baskets ", "").replace(/^./, (c) => c.toUpperCase()), href: `/${slug}`,
+    cards: products.filter((p) => p.metadata?.gender === g.gender).slice(0, 4).map(toCard),
+  })).filter((t) => t.cards.length > 0)
   return (
     <>
       <JsonLd data={organizationJsonLd()} />
 
-      <section className={`${bleed} relative -mt-8 overflow-hidden bg-ink text-white`}>
-        <div aria-hidden="true" className="pointer-events-none absolute -right-32 top-1/2 h-[560px] w-[560px] -translate-y-1/2 rounded-full bg-accent/35 blur-3xl md:right-[5%]" />
-        <div className="relative mx-auto grid max-w-[1200px] items-center gap-6 px-4 pb-14 pt-12 md:grid-cols-[1.05fr_1fr] md:gap-10 md:py-24">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">Baskets homme &amp; femme</p>
-            <h1 className="mt-4 max-w-xl text-5xl font-bold leading-[1.05] md:text-7xl">Marchez avec l'élite.</h1>
-            <p className="mt-6 max-w-md text-lg text-white/75">Une sélection de baskets pensée pour la ville et le mouvement. Confort absolu et design intemporel.</p>
-            <div className="mt-9 flex flex-wrap gap-3">
-              <Link href="/baskets-femme" className="btn-primary">Baskets femme</Link>
-              <Link href="/baskets-homme" className="btn bg-white text-ink hover:bg-white/90">Baskets homme</Link>
-            </div>
-          </div>
-          <div className="relative mx-auto w-full max-w-[520px]">
-            <SneakerArt color="#f4f3ee" className="relative w-full -rotate-6 drop-shadow-[0_30px_40px_rgba(0,0,0,0.45)]" />
-            {Number.isFinite(from) && (
-              <p className="absolute bottom-[8%] right-[4%] rounded-full bg-white px-4 py-2 text-sm font-semibold text-ink shadow-lg">Dès {eur(from)}</p>)}
-          </div>
+      {/* Ouverture éditoriale : titre en grand, promesse à droite */}
+      <section className="-mt-8 grid gap-6 pb-10 pt-12 md:grid-cols-[1.4fr_1fr] md:items-end md:pt-16">
+        <h1 className="font-display text-[3.2rem] font-bold uppercase leading-[0.92] tracking-[-0.02em] md:text-[6.5rem]">Marchez avec<br />l'élite.</h1>
+        <div className="md:pb-3">
+          <p className="max-w-sm text-lg text-muted">Une sélection de baskets pensée pour la ville et le mouvement. Confort absolu et design intemporel.</p>
+          {Number.isFinite(from) && <p className="mt-4 text-sm font-semibold uppercase tracking-[0.14em]">À partir de {eur(from)}</p>}
         </div>
+      </section>
+
+      <section aria-label="Univers" className={`${bleed} grid md:grid-cols-2`}>
+        {universes.map((u, i) => (
+          <Link key={u.slug} href={`/${u.slug}`} className={`group relative flex h-[62vh] min-h-[380px] flex-col justify-between overflow-hidden p-6 md:h-[78vh] md:p-8 ${u.fg}`} style={{ background: u.bg }}>
+            <span className="relative z-10">
+              <span className="block font-display text-5xl font-bold uppercase tracking-[-0.02em] md:text-7xl">{u.label}</span>
+              <span className="mt-2 block text-sm opacity-75">{u.hint}</span>
+            </span>
+            <SneakerArt color={u.sneaker} className={`absolute left-1/2 top-1/2 w-[92%] max-w-[640px] -translate-x-1/2 -translate-y-[40%] transition-transform duration-700 group-hover:scale-[1.04] ${i === 0 ? "-rotate-[8deg]" : "rotate-[8deg] -scale-x-100 group-hover:-scale-x-[1.04]"}`} />
+            <span className={`relative z-10 inline-flex w-fit items-center gap-2 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] ${u.chip}`}>
+              Acheter {u.label.toLowerCase()} <span aria-hidden="true" className="transition-transform group-hover:translate-x-1">→</span>
+            </span>
+          </Link>))}
       </section>
 
       <div className={`${bleed} border-b border-line bg-white`}>
@@ -71,46 +83,42 @@ export default async function Home() {
         </ul>
       </div>
 
-      {cards.length > 0 && (
-        <section aria-labelledby="nouveautes" className="mt-16 md:mt-20">
-          <div className="flex items-end justify-between gap-4">
-            <div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">Sélection</p><h2 id="nouveautes" className="mt-2 text-3xl font-semibold md:text-4xl">Nos nouveautés</h2></div>
-            <Link href="/baskets-femme" className="group inline-flex items-center gap-1 text-sm font-medium hover:text-accent">Tout voir <span aria-hidden="true" className="transition-transform group-hover:translate-x-1">→</span></Link>
-          </div>
-          <ul className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">{cards.map((c, i) => <li key={c.id}><ProductCard c={c} priority={i < 2} /></li>)}</ul>
+      {tabs.length > 0 && (
+        <section aria-labelledby="nouveautes" className={`${bleed} mt-16 md:mt-24`}>
+          <h2 id="nouveautes" className="mx-auto mb-6 max-w-[1200px] px-4 font-display text-4xl font-bold uppercase tracking-[-0.01em] md:text-5xl">Nouveautés</h2>
+          <NewArrivals tabs={tabs} />
         </section>)}
 
-      <section aria-labelledby="cats" className="mt-20 md:mt-24">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">Univers</p>
-        <h2 id="cats" className="mt-2 text-3xl font-semibold md:text-4xl">Parcourez nos catégories</h2>
-        <ul className="mt-8 grid gap-4 md:grid-cols-3">
+      <section aria-labelledby="cats" className={`${bleed} mt-20 md:mt-28`}>
+        <h2 id="cats" className="mx-auto mb-6 max-w-[1200px] px-4 font-display text-4xl font-bold uppercase tracking-[-0.01em] md:text-5xl">Univers</h2>
+        <ul className="gallery md:grid-cols-3">
           {categories.map((c) => (
             <li key={c.href}>
-              <Link href={c.href} className="group relative flex h-44 overflow-hidden rounded-[16px] p-6 md:h-64" style={{ background: tint(c.color, 0.16) }}>
-                <span className="relative z-10 flex flex-col">
-                  <span className="font-display text-2xl font-semibold">{c.label}</span>
-                  <span className="mt-1 text-sm text-muted">{c.hint}</span>
-                  <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium">Découvrir <span aria-hidden="true" className="transition-transform group-hover:translate-x-1">→</span></span>
+              <Link href={c.href} className="group relative flex h-72 overflow-hidden p-5 md:h-[440px]" style={{ background: tint(c.color, 0.18, "#f2f1ec") }}>
+                {/* Étiquette posée sur le visuel (référence : Sneakersnstuff) */}
+                <span className="relative z-10 flex h-fit flex-col items-start gap-1.5">
+                  <span className="inline-flex items-center gap-2 bg-white px-3 py-1.5 font-display text-lg font-bold uppercase">{c.label}<span aria-hidden="true" className="transition-transform group-hover:translate-x-1">→</span></span>
+                  <span className="bg-white px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.12em]">{c.hint}</span>
                 </span>
-                <SneakerArt color={c.color} className="absolute -bottom-4 -right-8 w-[78%] -rotate-12 transition-transform duration-500 group-hover:-rotate-6 group-hover:scale-105" />
+                <SneakerArt color={c.color} className="absolute -bottom-6 -right-10 w-[96%] -rotate-12 transition-transform duration-700 group-hover:-rotate-6 group-hover:scale-105" />
               </Link>
             </li>))}
         </ul>
       </section>
 
-      <section className="relative mt-20 overflow-hidden rounded-[16px] bg-accent text-white md:mt-24">
-        <div aria-hidden="true" className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/10" />
-        <div className="relative grid items-center gap-8 p-8 md:grid-cols-[1.4fr_1fr] md:p-14">
+      <section className={`${bleed} relative mt-20 overflow-hidden bg-accent text-white md:mt-28`}>
+        <div aria-hidden="true" className="absolute -right-24 -top-24 h-96 w-96 rounded-full bg-white/10" />
+        <div className="relative mx-auto grid max-w-[1200px] items-center gap-10 px-4 py-14 md:grid-cols-[1.4fr_1fr] md:py-20">
           <div>
-            <h2 className="text-3xl font-semibold md:text-4xl">Zéro doute sur la taille.</h2>
-            <p className="mt-3 max-w-xl text-white/90">Mesurez la longueur de votre pied et trouvez votre pointure en 30 secondes. Livraison offerte dès {FREE_SHIPPING_THRESHOLD} €.</p>
+            <h2 className="font-display text-4xl font-bold uppercase leading-[0.95] tracking-[-0.01em] md:text-6xl">Zéro doute<br />sur la taille.</h2>
+            <p className="mt-4 max-w-xl text-white/90">Mesurez la longueur de votre pied et trouvez votre pointure en 30 secondes. Livraison offerte dès {FREE_SHIPPING_THRESHOLD} €.</p>
             <Link href="/guide-des-tailles" className="btn mt-7 bg-white text-accent hover:bg-white/90">Calculer ma taille</Link>
           </div>
-          <div aria-hidden="true" className="rounded-[12px] bg-white p-5 text-ink shadow-xl">
+          <div aria-hidden="true" className="bg-white p-6 text-ink shadow-xl">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Exemple</p>
             <div className="mt-3 flex items-baseline justify-between"><span className="text-sm text-muted">Longueur du pied</span><span className="font-display text-2xl font-semibold">27,5 cm</span></div>
-            <div className="mt-3 h-3 rounded-full bg-paper"><div className="h-3 w-[72%] rounded-full bg-accent" /></div>
-            <div className="mt-4 flex items-baseline justify-between border-t border-line pt-4"><span className="text-sm text-muted">Pointure conseillée</span><span className="font-display text-3xl font-bold text-accent">44</span></div>
+            <div className="mt-3 h-3 bg-paper"><div className="h-3 w-[72%] bg-accent" /></div>
+            <div className="mt-4 flex items-baseline justify-between border-t border-line pt-4"><span className="text-sm text-muted">Pointure conseillée</span><span className="font-display text-4xl font-bold text-accent">44</span></div>
           </div>
         </div>
       </section>

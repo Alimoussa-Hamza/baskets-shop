@@ -5,6 +5,8 @@ import { listProducts } from "@/lib/medusa"
 import { GENRES, toCard } from "@/lib/catalog"
 import { CATEGORY_INTRO, CATEGORY_LABEL } from "@/lib/content"
 import { ProductGrid } from "@/components/product-grid"
+import { CategoryHero } from "@/components/category-hero"
+import { HelpStrip } from "@/components/help-strip"
 import { JsonLd } from "@/components/json-ld"
 import { breadcrumbJsonLd } from "@/lib/jsonld"
 import { pageMeta } from "@/lib/seo"
@@ -16,7 +18,8 @@ async function load(genre: string, category: string) {
   const g = GENRES[genre]
   if (!g) return null
   const products = (await listProducts()).filter((p) => p.metadata?.gender === g.gender && p.categories?.some((c) => c.handle === category))
-  return products.length ? { g, products } : null
+  const all = (await listProducts()).filter((p) => p.metadata?.gender === g.gender)
+  return products.length ? { g, products, all } : null
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ genre: string; category: string }> }): Promise<Metadata> {
@@ -33,18 +36,21 @@ export default async function CategoryPage({ params }: { params: Promise<{ genre
   const data = await load(genre, category)
   if (!data) notFound()
   const label = CATEGORY_LABEL[category] ?? category
+  const cards = data.products.map(toCard)
+  const siblings = [...new Set(data.all.map((p) => p.categories?.[0]?.handle).filter((x): x is string => !!x))]
   return (
     <>
       <JsonLd data={breadcrumbJsonLd([
         { name: "Accueil", url: SITE_URL }, { name: data.g.label, url: `${SITE_URL}/${genre}` },
         { name: label, url: `${SITE_URL}/${genre}/${category}` }])} />
-      <nav aria-label="Fil d'Ariane" className="text-sm text-muted">
-        <Link href="/" className="hover:text-accent">Accueil</Link> <span aria-hidden="true">›</span>{" "}
-        <Link href={`/${genre}`} className="hover:text-accent">{data.g.label}</Link> <span aria-hidden="true">›</span> <span className="text-ink">{label}</span>
-      </nav>
-      <h1 className="mt-4 text-4xl font-bold md:text-5xl">{data.g.label} {label.toLowerCase()}</h1>
-      <p className="mt-4 max-w-2xl text-muted">{CATEGORY_INTRO[`${genre}/${category}`] ?? "Introduction à rédiger (100 à 200 mots, unique)."}</p>
-      <div className="mt-10"><ProductGrid cards={data.products.map(toCard)} /></div>
+      <CategoryHero
+        color={genre === "baskets-femme" ? "#d9cdb8" : "#1f4fff"}
+        title={`${data.g.label} ${label.toLowerCase()}`} intro={CATEGORY_INTRO[`${genre}/${category}`]} cards={cards}
+        crumbs={<><Link href="/" className="hover:text-accent">Accueil</Link> <span aria-hidden="true">›</span>{" "}
+          <Link href={`/${genre}`} className="hover:text-accent">{data.g.label}</Link> <span aria-hidden="true">›</span> <span className="text-ink">{label}</span></>}
+        chips={siblings.map((c) => ({ label: CATEGORY_LABEL[c] ?? c, href: `/${genre}/${c}`, active: c === category, count: data.all.filter((p) => p.categories?.some((x) => x.handle === c)).length }))} />
+      <div className="mt-10"><ProductGrid cards={cards} /></div>
+      <HelpStrip />
     </>
   )
 }

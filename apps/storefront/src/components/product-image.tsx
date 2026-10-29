@@ -7,7 +7,7 @@ export function ProductImage({ src, alt, color, priority = false, sizes = "(min-
   if (src) return <Image src={src} alt={alt} fill sizes={sizes} priority={priority} className="object-cover" />
   const hex = (color && COLOR_HEX[color]) || "#111111"
   return (
-    <div role="img" aria-label={`${alt} (photo à venir)`} className="flex h-full w-full items-center justify-center transition-colors duration-500" style={{ background: tint(hex, 0.12) }}>
+    <div role="img" aria-label={`${alt} (photo à venir)`} className="flex h-full w-full items-center justify-center transition-colors duration-500" style={{ background: tint(hex, 0.06, "#eeede8") }}>
       <SneakerArt color={hex} className="w-[88%] max-w-[440px] -rotate-3 transition-transform duration-500 group-hover:rotate-0 group-hover:scale-105" />
     </div>
   )

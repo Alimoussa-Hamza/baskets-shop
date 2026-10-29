@@ -4,7 +4,7 @@ export const CATEGORY_INTRO: Record<string, string> = {
   // "baskets-femme/running": "…100 à 200 mots…",
 }
 export const GENRE_INTRO: Record<string, string> = {
-  "baskets-femme": "Notre sélection de baskets pour femme. Texte d'introduction à rédiger (100 à 200 mots, unique).",
-  "baskets-homme": "Notre sélection de baskets pour homme. Texte d'introduction à rédiger (100 à 200 mots, unique).",
+  "baskets-femme": "", // à rédiger (100 à 200 mots, unique) : tant que c'est vide, rien n'est affiché
+  "baskets-homme": "", // idem
 }
 export const CATEGORY_LABEL: Record<string, string> = { running: "Running", urbaines: "Urbaines", montantes: "Montantes" }
