@@ -72,7 +72,8 @@ export default async function seedDemo({ container }: ExecArgs) {
   let regionId = regions[0]?.id as string | undefined
   if (!regionId) {
     const { result } = await createRegionsWorkflow(container).run({
-      input: { regions: [{ name: "France", currency_code: "eur", countries: ["fr"], payment_providers: ["pp_system_default"] }] },
+      // Stripe seulement si ses clés sont configurées (sinon le fournisseur n'est pas chargé)
+      input: { regions: [{ name: "France", currency_code: "eur", countries: ["fr"], payment_providers: ["pp_system_default", ...(process.env.STRIPE_API_KEY ? ["pp_stripe_stripe"] : [])] }] },
     })
     regionId = result[0].id
   }

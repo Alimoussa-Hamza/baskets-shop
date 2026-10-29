@@ -54,7 +54,8 @@ export default defineConfig({
                 {
                   resolve: "@medusajs/medusa/payment-stripe",
                   id: "stripe",
-                  options: { apiKey: need("STRIPE_API_KEY"), webhookSecret: need("STRIPE_WEBHOOK_SECRET"), capture: true },
+                  // automaticPaymentMethods : carte + portefeuilles (Apple Pay, Google Pay…) activés dans le tableau de bord Stripe
+                  options: { apiKey: need("STRIPE_API_KEY"), webhookSecret: need("STRIPE_WEBHOOK_SECRET"), capture: true, automaticPaymentMethods: true },
                 },
               ],
             },

@@ -91,6 +91,10 @@ test("parcours client complet", async ({ page }, info) => {
   })
 
   await test.step("paiement : refusé sans CGV, accepté avec", async () => {
+    // Choix « Paiement factice » présent quand Stripe est aussi configuré ; sinon seul le mode test s'affiche
+    const fake = page.getByRole("radio", { name: /Paiement factice/ })
+    await expect(fake.or(page.getByRole("note").filter({ hasText: "Mode test" }))).toBeVisible()
+    if (await fake.isVisible()) await fake.check()
     const pay = page.getByRole("button", { name: /commander avec obligation de paiement/i })
     await pay.click()
     await expect(page.getByRole("alert").filter({ hasText: "conditions générales de vente" })).toBeVisible()

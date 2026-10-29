@@ -16,6 +16,10 @@ npm ci
 npm run db:migrate                       # applique aussi les migrations des modules (déjà versionnées)
 npx medusa user -e admin@example.com -p "<mot-de-passe>"      # compte admin local
 npm run dev                               # API + admin : http://localhost:9000/app
+# Paiement Stripe (clés de TEST dans .env) : relais des webhooks en local, à garder ouvert
+# stripe listen --api-key "$STRIPE_API_KEY" --print-secret   → valeur de STRIPE_WEBHOOK_SECRET
+# stripe listen --api-key "$STRIPE_API_KEY" --forward-to localhost:9000/hooks/payment/stripe_stripe
+# Région France : ajouter le fournisseur « pp_stripe_stripe » (Admin > Settings > Regions) si la région existait avant les clés
 
 cd ../storefront
 cp .env.example .env                      # clé publiable : Admin > Settings > Publishable API Keys

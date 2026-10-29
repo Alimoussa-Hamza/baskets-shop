@@ -77,7 +77,9 @@ Décision du 29/10/2026 : CJdropshipping pour démarrer, **uniquement des modèl
 ## 6. Paiement et stock
 
 - Stripe via le provider Medusa officiel, clé et secret de webhook par environnement. **Jamais de numéro de carte côté serveur.**
-- Exigences du brief à **tester** (aucune n'est prouvée par ce squelette) :
+- **Branché et testé en local le 29/10/2026 (clés de test)** : Payment Element côté navigateur (`components/card-payment.tsx`, moyens de paiement automatiques du tableau de bord Stripe), session ouverte après le choix de la livraison (`startCardPayment`), commande créée par `/complete` **après** confirmation, retour 3D Secure par `app/commande/retour`. Tests Playwright `e2e/paiement-stripe.spec.ts` : carte acceptée, carte refusée (aucune commande), 3D Secure validé. Webhooks reçus via `stripe listen` (réponses 200).
+- **Compte Stripe** : les clés de test actuelles sont celles d'un autre projet (CARSERVICE) ; ouvrir un compte dédié à la boutique avant la production. Les moyens affichés (Klarna, Bancontact, Amazon Pay…) dépendent des réglages de ce compte.
+- Exigences du brief encore à **tester** :
   1. Signature du webhook vérifiée sur le corps brut ; rejeu du même `event.id` sans double effet ; réponse < 5 s.
   2. Commande créée seulement après confirmation du paiement.
   3. Stock verrouillé par taille au checkout (réservation d'inventaire par variante).

@@ -3,12 +3,13 @@
 import Link from "next/link"
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { listShipping, placeOrder, saveContact, selectShipping, type Contact, type ShippingChoice } from "@/lib/cart-actions"
+import { listShipping, placeOrder, saveContact, selectShipping, startCardPayment, type Contact, type ShippingChoice } from "@/lib/cart-actions"
+import { CardPayment } from "./card-payment"
 import { eur } from "@/lib/catalog"
 
 type Step = 1 | 2 | 3
 
-export function Checkout({ initial, total, testPayment }: { initial: Contact; total: number; testPayment: boolean }) {
+export function Checkout({ initial, total, testPayment, stripeKey }: { initial: Contact; total: number; testPayment: boolean; stripeKey: string }) {
   const router = useRouter()
   const [pending, start] = useTransition()
   const [step, setStep] = useState<Step>(1)
@@ -17,6 +18,8 @@ export function Checkout({ initial, total, testPayment }: { initial: Contact; to
   const [option, setOption] = useState<string>("")
   const [accepted, setAccepted] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [method, setMethod] = useState<"card" | "test">(stripeKey ? "card" : "test")
+  const [clientSecret, setClientSecret] = useState<string | null>(null)
 
   const set = (k: keyof Contact) => (e: React.ChangeEvent<HTMLInputElement>) => setC({ ...c, [k]: e.target.value })
   const fail = (m: string) => setError(m)
@@ -36,12 +39,25 @@ export function Checkout({ initial, total, testPayment }: { initial: Contact; to
       const r = await selectShipping(option); if (!r.ok) return fail(r.error)
       router.refresh() // met à jour le résumé (livraison, total)
       setStep(3)
+      if (method === "card") await prepareCard()
     })
+  }
+  // Session Stripe ouverte une fois la livraison choisie : le montant du PaymentIntent inclut les frais de port.
+  async function prepareCard() {
+    setClientSecret(null)
+    const r = await startCardPayment()
+    if (!r.ok) return fail(r.error)
+    setClientSecret(r.clientSecret)
+  }
+  function chooseMethod(m: "card" | "test") {
+    setMethod(m); setError(null)
+    if (m === "card" && !clientSecret) start(prepareCard)
   }
   function pay(e: React.FormEvent) {
     e.preventDefault(); setError(null)
-    start(async () => { const r = await placeOrder(accepted); if (r && !r.ok) fail(r.error) }) // en cas de succès : redirection serveur
+    start(async () => { const r = await placeOrder(accepted, "test"); if (r && !r.ok) fail(r.error) }) // en cas de succès : redirection serveur
   }
+  const payLabel = `Commander avec obligation de paiement · ${eur(total)}`
 
   const heading = (n: Step, label: string) => (
     <div className={`flex items-center justify-between border-b border-line pb-3 ${step < n ? "opacity-50" : ""}`}>
@@ -96,18 +112,36 @@ export function Checkout({ initial, total, testPayment }: { initial: Contact; to
 
       <section aria-labelledby="s3">
         {heading(3, "Paiement sécurisé")}
-        {step === 3 && (
-          <form onSubmit={pay} className="mt-6 space-y-5">
-            {testPayment
-              ? <p role="note" className="rounded-[8px] border border-accent bg-white p-4 text-sm">Mode test : aucun paiement réel n'est effectué. Le paiement par carte (Stripe), PayPal, Apple Pay et Google Pay sera branché à l'étape suivante.</p>
-              : <p role="note" className="rounded-[8px] border border-line bg-white p-4 text-sm text-muted">Le paiement par carte n'est pas encore activé.</p>}
+        {step === 3 && (() => {
+          const legal = (<>
             <p className="text-sm text-muted">Livraison estimée sous 2 à 4 jours ouvrés. Vous disposez de 14 jours à compter de la réception pour exercer votre droit de rétractation (<Link href="/retractation" target="_blank" className="link">renoncer au contrat ici</Link>).</p>
             <label className="flex items-start gap-3 text-sm"><input type="checkbox" className="mt-1 h-5 w-5" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} />
               <span>J'ai lu et j'accepte les <Link href="/cgv" target="_blank" className="link">conditions générales de vente</Link> et la <Link href="/confidentialite" target="_blank" className="link">politique de confidentialité</Link>.</span></label>
-            {error && step === 3 && <p role="alert" className="text-sm font-medium text-danger">{error}</p>}
-            {/* Intitulé du bouton : formulation « obligation de paiement » à faire valider (art. L221-14, non vérifié ici) */}
-            <button className="btn-primary w-full" disabled={pending || !testPayment}>{pending ? "Traitement…" : `Commander avec obligation de paiement · ${eur(total)}`}</button>
-          </form>)}
+            {error && <p role="alert" className="text-sm font-medium text-danger">{error}</p>}
+          </>)
+          return (
+            <div className="mt-6 space-y-5">
+              {stripeKey && testPayment && (
+                <fieldset className="grid gap-2 sm:grid-cols-2"><legend className="sr-only">Moyen de paiement</legend>
+                  {([["card", "Carte bancaire", "Stripe (clés de test)"], ["test", "Paiement factice", "Développement uniquement"]] as const).map(([v, t, h]) => (
+                    <label key={v} className={`card flex cursor-pointer items-center gap-3 p-4 ${method === v ? "border-accent ring-1 ring-accent" : ""}`}>
+                      <input type="radio" name="pay" checked={method === v} onChange={() => chooseMethod(v)} />
+                      <span className="text-sm"><span className="block font-medium">{t}</span><span className="text-muted">{h}</span></span></label>))}
+                </fieldset>)}
+              {method === "card" && stripeKey ? (
+                clientSecret
+                  ? <CardPayment publishableKey={stripeKey} clientSecret={clientSecret} accepted={accepted} label={payLabel} onError={setError}>{legal}</CardPayment>
+                  : <>{error ? legal : <p className="text-sm text-muted" aria-live="polite">Chargement du paiement sécurisé…</p>}</>
+              ) : testPayment ? (
+                <form onSubmit={pay} className="space-y-5">
+                  <p role="note" className="rounded-[8px] border border-accent bg-white p-4 text-sm">Mode test : aucun paiement réel n'est effectué.</p>
+                  {legal}
+                  {/* Intitulé du bouton : formulation « obligation de paiement » à faire valider (art. L221-14, non vérifié ici) */}
+                  <button className="btn-primary w-full" disabled={pending}>{pending ? "Traitement…" : payLabel}</button>
+                </form>
+              ) : <p role="note" className="rounded-[8px] border border-line bg-white p-4 text-sm text-muted">Le paiement par carte n'est pas encore activé.</p>}
+            </div>)
+        })()}
       </section>
     </div>
   )

@@ -5,7 +5,7 @@ import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
 import { medusa, MedusaError, getRegionId } from "./medusa"
 import { CART_COOKIE, CART_FIELDS, ORDER_COOKIE, type Cart } from "./cart-data"
-import { TEST_PAYMENT } from "./site"
+import { STRIPE_PROVIDER, TEST_PAYMENT } from "./site"
 
 type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string }
 
@@ -129,34 +129,80 @@ export async function selectShipping(optionId: string): Promise<Result> {
   }
 }
 
+type CheckedCart = { pcId: string }
+
+/** Panier prêt à payer (coordonnées + livraison) ; crée la collection de paiement au besoin. */
+async function checkoutReady(id: string): Promise<Result<CheckedCart>> {
+  const { cart } = await medusa<{ cart: Cart & { payment_collection?: { id: string } | null } }>(
+    `/store/carts/${id}?fields=${encodeURIComponent(CART_FIELDS)},*payment_collection`, { cache: "no-store" })
+  if (!cart.email || !cart.shipping_address?.address_1) return { ok: false, error: "Renseignez d'abord vos coordonnées." }
+  if (!cart.shipping_methods?.length) return { ok: false, error: "Choisissez un mode de livraison." }
+  let pcId = cart.payment_collection?.id
+  if (!pcId) {
+    const { payment_collection } = await medusa<{ payment_collection: { id: string } }>("/store/payment-collections", { method: "POST", body: JSON.stringify({ cart_id: id }) })
+    pcId = payment_collection.id
+  }
+  return { ok: true, pcId }
+}
+
+/**
+ * Paiement par carte (Stripe) : ouvre une session de paiement et renvoie uniquement le client_secret
+ * du PaymentIntent. La carte est saisie dans le formulaire Stripe : aucun numéro ne transite par nos serveurs.
+ */
+export async function startCardPayment(): Promise<Result<{ clientSecret: string }>> {
+  const id = await currentCartId()
+  if (!id) return { ok: false, error: "Votre panier est vide." }
+  try {
+    const ready = await checkoutReady(id)
+    if (!ready.ok) return ready
+    const { payment_collection } = await medusa<{ payment_collection: { payment_sessions?: { provider_id: string; data?: { client_secret?: string } }[] } }>(
+      `/store/payment-collections/${ready.pcId}/payment-sessions`, { method: "POST", body: JSON.stringify({ provider_id: STRIPE_PROVIDER }) })
+    const secret = payment_collection.payment_sessions?.find((p) => p.provider_id === STRIPE_PROVIDER)?.data?.client_secret
+    if (!secret) return { ok: false, error: "Le paiement par carte est momentanément indisponible." }
+    return { ok: true, clientSecret: secret }
+  } catch (e) {
+    return { ok: false, error: friendly(e) }
+  }
+}
+
 /**
  * Création de la commande APRÈS confirmation du paiement (règle du brief).
- * Aujourd'hui : uniquement le paiement factice de développement (TEST_PAYMENT). Stripe sera branché avec
- * ses clés de test : la session Stripe sera confirmée côté navigateur, puis l'appel à /complete restera ici.
+ * - "card" : le navigateur a déjà confirmé le paiement auprès de Stripe ; Medusa vérifie le PaymentIntent à /complete.
+ * - "test" : paiement factice de développement (jamais en production).
  */
-export async function placeOrder(accepted: boolean): Promise<Result> {
+export async function placeOrder(accepted: boolean, method: "card" | "test"): Promise<Result> {
   if (!accepted) return { ok: false, error: "Vous devez accepter les conditions générales de vente pour commander." }
   const id = await currentCartId()
   if (!id) return { ok: false, error: "Votre panier est vide." }
-  if (!TEST_PAYMENT) return { ok: false, error: "Le paiement par carte n'est pas encore activé." }
+  if (method === "test") {
+    if (!TEST_PAYMENT) return { ok: false, error: "Paiement de test indisponible." }
+    try {
+      const ready = await checkoutReady(id)
+      if (!ready.ok) return ready
+      await medusa(`/store/payment-collections/${ready.pcId}/payment-sessions`, { method: "POST", body: JSON.stringify({ provider_id: "pp_system_default" }) })
+    } catch (e) {
+      return { ok: false, error: friendly(e) }
+    }
+  }
+  return finalizeOrder(id)
+}
 
+/** Retour de redirection Stripe (3D Secure, portefeuilles) : finalise la commande du panier courant. */
+export async function finalizeCurrentCart(): Promise<Result> {
+  const id = await currentCartId()
+  if (!id) return { ok: false, error: "Votre panier est vide." }
+  return finalizeOrder(id)
+}
+
+async function finalizeOrder(id: string): Promise<Result> {
   let orderId: string
   try {
-    const { cart } = await medusa<{ cart: Cart & { payment_collection?: { id: string } | null } }>(
-      `/store/carts/${id}?fields=${encodeURIComponent(CART_FIELDS)},*payment_collection`, { cache: "no-store" })
-    if (!cart.email || !cart.shipping_address?.address_1) return { ok: false, error: "Renseignez d'abord vos coordonnées." }
-    if (!cart.shipping_methods?.length) return { ok: false, error: "Choisissez un mode de livraison." }
-
-    let pcId = cart.payment_collection?.id
-    if (!pcId) {
-      const { payment_collection } = await medusa<{ payment_collection: { id: string } }>("/store/payment-collections", { method: "POST", body: JSON.stringify({ cart_id: id }) })
-      pcId = payment_collection.id
-    }
-    await medusa(`/store/payment-collections/${pcId}/payment-sessions`, { method: "POST", body: JSON.stringify({ provider_id: "pp_system_default" }) })
-
     const done = await medusa<{ type: "order" | "cart"; order?: { id: string }; error?: { message?: string } }>(
       `/store/carts/${id}/complete`, { method: "POST" })
-    if (done.type !== "order" || !done.order) return { ok: false, error: done.error?.message ? "Un article n'est plus disponible. Vérifiez votre panier." : "La commande n'a pas pu être finalisée." }
+    if (done.type !== "order" || !done.order) {
+      const msg = done.error?.message ?? ""
+      return { ok: false, error: /inventory|stock|quantity/i.test(msg) ? "Un article n'est plus disponible. Vérifiez votre panier." : "Le paiement n'a pas été confirmé. Aucune commande n'a été créée." }
+    }
     orderId = done.order.id
   } catch (e) {
     return { ok: false, error: friendly(e) }
