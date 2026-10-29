@@ -39,6 +39,7 @@ Références Railway : `${{postgres.DATABASE_URL}}` et `${{redis.REDIS_URL}}` (a
 | Variable | Valeur staging |
 |---|---|
 | `NODE_ENV` | `production` |
+| `APP_ENV` | `staging` (active les garde-fous : le backend refuse de démarrer si la configuration est incomplète ou dangereuse) |
 | `DATABASE_URL` | `${{postgres.DATABASE_URL}}` |
 | `DATABASE_SSL` | `false` si l'adresse interne refuse le SSL (à tester), sinon vide |
 | `REDIS_URL` | `${{redis.REDIS_URL}}` |
@@ -70,8 +71,13 @@ Les `NEXT_PUBLIC_*` sont figées **au build** : les déclarer dans les variables
 | `NEXT_PUBLIC_MEDUSA_BACKEND_URL` | `https://<domaine-backend>` |
 | `NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY` | Clé publiable créée à l'étape 3 |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | `pk_test_…` |
+| `APP_ENV` | `staging` (la boutique refuse de démarrer sans `STAGING_PASSWORD` ou avec une clé Stripe live) |
 | `STAGING_PASSWORD` / `STAGING_USER` | Mot de passe d'accès / `equipe` (lus au démarrage, pas au build) |
 | `NEXT_PUBLIC_TEST_PAYMENT` | Ne pas définir : ignoré en production |
+
+## Garde-fous (ajoutés le 29/10/2026)
+
+En ligne (`NODE_ENV=production`), backend (`src/lib/env-guards.ts`, testé) et boutique (`src/instrumentation.ts`) **refusent de démarrer** et listent les problèmes si : `APP_ENV` absent, secrets d'exemple ou trop courts, e-mails non configurés, Stripe absent, CORS avec `*` ou en http. En `staging` : mot de passe d'accès obligatoire, clés Stripe live interdites. En `production` : clés live, CJ hors sandbox, mention légale et copie boutique exigées, mot de passe d'accès interdit. Le déploiement échoue alors au lieu de tourner mal.
 
 ## Avant la vraie production (plus tard)
 

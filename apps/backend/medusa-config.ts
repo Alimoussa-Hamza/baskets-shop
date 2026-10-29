@@ -1,6 +1,8 @@
 import { loadEnv, defineConfig } from "@medusajs/framework/utils"
+import { assertProductionEnv } from "./src/lib/env-guards"
 
 loadEnv(process.env.NODE_ENV || "development", process.cwd())
+assertProductionEnv() // en ligne : refuse de démarrer avec une configuration dangereuse (voir src/lib/env-guards.ts)
 
 const need = (name: string): string => {
   const v = process.env[name]
