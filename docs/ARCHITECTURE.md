@@ -103,7 +103,8 @@ Décision du 29/10/2026 : CJdropshipping pour démarrer, **uniquement des modèl
 - Limitation de débit 10 requêtes/min/IP ; réponse 404 identique si commande absente ou e-mail différent.
 - Page `/retractation`, lien en pied de page sur tout le site.
 - E-mail d'accusé : implémenté (voir §6), testé en local seulement.
-- **Reste à faire** : formulaire type téléchargeable, mention dans les CGV et sur la page produit/confirmation de commande, gestion de la rétractation partielle côté UI, calcul du délai (point de départ = réception) côté admin.
+- **Rétractation partielle (29/10/2026)** : à l'étape 2, choix « toute la commande » ou « certains articles » ; `confirm` accepte `scope` + `item_ids`, vérifiés contre les articles de la commande (400 sinon) ; tous les articles cochés = rétractation totale. Les articles déjà couverts par une rétractation confirmée sont signalés (« Déjà rétracté ») et exclus. Testé : `e2e/retractation-partielle.spec.ts` (accusé et e-mail ne citent que les articles choisis).
+- **Reste à faire** : formulaire type téléchargeable, mention dans les CGV et sur la page produit/confirmation de commande, rétractation partielle **par quantité** (aujourd'hui par ligne de commande), calcul du délai (point de départ = réception) côté admin.
 
 ## 8. SEO
 

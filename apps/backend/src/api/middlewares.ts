@@ -26,6 +26,9 @@ export const StartWithdrawalSchema = z.object({
 export const ConfirmWithdrawalSchema = z.object({
   id: z.string().max(64),
   email: z.string().email().max(254),
+  // Choix fait à l'étape 2 : toute la commande ou certains articles (rétractation partielle)
+  scope: z.enum(["full", "partial"]).optional(),
+  item_ids: z.array(z.string().max(64)).max(50).optional(),
 })
 
 export const ShipSupplierOrderSchema = z.object({
