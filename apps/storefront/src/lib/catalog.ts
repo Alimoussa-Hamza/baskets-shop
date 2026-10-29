@@ -9,6 +9,7 @@ export const genreSlug = (g?: unknown) => (g === "male" ? "baskets-homme" : "bas
 
 export const COLOR_HEX: Record<string, string> = {
   Noir: "#111111", Blanc: "#ffffff", Bleu: "#1f4fff", Gris: "#6b6b66", Beige: "#d9cdb8",
+  Vert: "#2f6b4f", Rouge: "#c8332b", Rose: "#e7a3b5", Marron: "#7a4e2d", Crème: "#f1ead8",
 }
 
 export const eur = (n: number) =>

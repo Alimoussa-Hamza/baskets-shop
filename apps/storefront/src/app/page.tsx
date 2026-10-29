@@ -29,6 +29,9 @@ const categories = [
   { label: "Running", hint: "Amorti et légèreté", href: "/baskets-homme/running", color: "#1f4fff" },
   { label: "Urbaines", hint: "Le quotidien, en style", href: "/baskets-femme/urbaines", color: "#d9cdb8" },
   { label: "Montantes", hint: "Maintien et caractère", href: "/baskets-femme/montantes", color: "#111111" },
+  { label: "Rétro", hint: "Les classiques revisités", href: "/baskets-homme/retro", color: "#c8332b" },
+  { label: "Skate", hint: "Semelle plate, grip, style", href: "/baskets-homme/skate", color: "#2f6b4f" },
+  { label: "Femme · Rétro", hint: "Courts et lignes vintage", href: "/baskets-femme/retro", color: "#e7a3b5" },
 ]
 
 // Les deux univers en écran partagé (référence : Axel Arigato), chacun avec sa couleur d'ambiance.
@@ -91,7 +94,7 @@ export default async function Home() {
 
       <section aria-labelledby="cats" className={`${bleed} mt-20 md:mt-28`}>
         <h2 id="cats" className="mx-auto mb-6 max-w-[1200px] px-4 font-display text-4xl font-bold uppercase tracking-[-0.01em] md:text-5xl">Univers</h2>
-        <ul className="gallery md:grid-cols-3">
+        <ul className="gallery sm:grid-cols-2 lg:grid-cols-3">
           {categories.map((c) => (
             <li key={c.href}>
               <Link href={c.href} className="group relative flex h-72 overflow-hidden p-5 md:h-[440px]" style={{ background: tint(c.color, 0.18, "#f2f1ec") }}>

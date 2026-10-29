@@ -41,6 +41,23 @@ const DEMOS: Demo[] = [
   { handle: "white-essence", title: "White Essence", collection: "Collection Urbaine", gender: "female", category: "urbaines", colors: ["Blanc", "Noir"], price: 119, fit: "Taille normalement.", description: "Modèle de démonstration. Texte à rédiger par vos soins à partir de l'échantillon reçu." },
   { handle: "minimal-beige", title: "Minimal Beige", collection: "Essentials", gender: "female", category: "urbaines", colors: ["Beige"], price: 99, fit: "Taille normalement.", description: "Modèle de démonstration. Texte à rédiger par vos soins à partir de l'échantillon reçu." },
   { handle: "stride-run", title: "Stride Run", collection: "Performance", gender: "male", category: "running", colors: ["Noir", "Bleu"], price: 159, fit: "Taille grand : prendre une demi-pointure en dessous.", description: "Modèle de démonstration. Texte à rédiger par vos soins à partir de l'échantillon reçu." },
+  // Catalogue « toutes baskets » de démonstration (noms inventés, aucune marque réelle)
+  { handle: "volt-racer", title: "Volt Racer", collection: "Performance", gender: "male", category: "running", colors: ["Bleu", "Noir"], price: 129, fit: "Taille normalement.", description: "Modèle de démonstration. Texte à rédiger par vos soins à partir de l'échantillon reçu." },
+  { handle: "trail-pace", title: "Trail Pace", collection: "Performance", gender: "female", category: "running", colors: ["Rose", "Gris"], price: 119, fit: "Taille normalement.", description: "Modèle de démonstration. Texte à rédiger par vos soins à partir de l'échantillon reçu." },
+  { handle: "forest-run", title: "Forest Run", collection: "Performance", gender: "male", category: "running", colors: ["Vert", "Noir"], price: 139, fit: "Taille grand : prendre une demi-pointure en dessous.", description: "Modèle de démonstration. Texte à rédiger par vos soins à partir de l'échantillon reçu." },
+  { handle: "metro-one", title: "Metro One", collection: "Collection Urbaine", gender: "male", category: "urbaines", colors: ["Blanc", "Vert"], price: 109, fit: "Taille normalement.", description: "Modèle de démonstration. Texte à rédiger par vos soins à partir de l'échantillon reçu." },
+  { handle: "paname-low", title: "Paname Low", collection: "Collection Urbaine", gender: "female", category: "urbaines", colors: ["Crème", "Rose"], price: 99, fit: "Taille normalement.", description: "Modèle de démonstration. Texte à rédiger par vos soins à partir de l'échantillon reçu." },
+  { handle: "sienna-low", title: "Sienna Low", collection: "Collection Urbaine", gender: "female", category: "urbaines", colors: ["Marron", "Beige"], price: 119, fit: "Taille normalement.", description: "Modèle de démonstration. Texte à rédiger par vos soins à partir de l'échantillon reçu." },
+  { handle: "atlas-mid", title: "Atlas Mid", collection: "Montantes", gender: "male", category: "montantes", colors: ["Noir", "Marron"], price: 159, fit: "Taille petit : prendre une pointure au-dessus.", description: "Modèle de démonstration. Texte à rédiger par vos soins à partir de l'échantillon reçu." },
+  { handle: "brique-high", title: "Brique High", collection: "Montantes", gender: "female", category: "montantes", colors: ["Rouge", "Blanc"], price: 139, fit: "Taille normalement.", description: "Modèle de démonstration. Texte à rédiger par vos soins à partir de l'échantillon reçu." },
+  { handle: "retro-82", title: "Rétro 82", collection: "Rétro", gender: "male", category: "retro", colors: ["Blanc", "Rouge"], price: 119, fit: "Taille normalement.", description: "Modèle de démonstration. Texte à rédiger par vos soins à partir de l'échantillon reçu." },
+  { handle: "riviera-low", title: "Riviera Low", collection: "Rétro", gender: "female", category: "retro", colors: ["Crème", "Vert"], price: 109, fit: "Taille normalement.", description: "Modèle de démonstration. Texte à rédiger par vos soins à partir de l'échantillon reçu." },
+  { handle: "velours-retro", title: "Velours Rétro", collection: "Rétro", gender: "male", category: "retro", colors: ["Marron", "Bleu"], price: 129, fit: "Taille normalement.", description: "Modèle de démonstration. Texte à rédiger par vos soins à partir de l'échantillon reçu." },
+  { handle: "nova-court", title: "Nova Court", collection: "Rétro", gender: "female", category: "retro", colors: ["Blanc", "Bleu"], price: 99, fit: "Taille normalement.", description: "Modèle de démonstration. Texte à rédiger par vos soins à partir de l'échantillon reçu." },
+  { handle: "drift-skate", title: "Drift Skate", collection: "Skate", gender: "male", category: "skate", colors: ["Noir", "Gris"], price: 89, fit: "Taille grand : prendre une demi-pointure en dessous.", description: "Modèle de démonstration. Texte à rédiger par vos soins à partir de l'échantillon reçu." },
+  { handle: "kickflip-pro", title: "Kickflip Pro", collection: "Skate", gender: "male", category: "skate", colors: ["Crème", "Noir"], price: 95, fit: "Taille normalement.", description: "Modèle de démonstration. Texte à rédiger par vos soins à partir de l'échantillon reçu." },
+  { handle: "rose-lune", title: "Rose Lune", collection: "Skate", gender: "female", category: "skate", colors: ["Rose", "Noir"], price: 85, fit: "Taille normalement.", description: "Modèle de démonstration. Texte à rédiger par vos soins à partir de l'échantillon reçu." },
+  { handle: "halfpipe-mid", title: "Halfpipe Mid", collection: "Skate", gender: "female", category: "skate", colors: ["Vert", "Crème"], price: 105, fit: "Taille normalement.", description: "Modèle de démonstration. Texte à rédiger par vos soins à partir de l'échantillon reçu." },
 ]
 
 export default async function seedDemo({ container }: ExecArgs) {
@@ -144,7 +161,7 @@ export default async function seedDemo({ container }: ExecArgs) {
   await linkSalesChannelsToApiKeyWorkflow(container).run({ input: { id: key.id, add: [channel.id] } }).catch(() => undefined)
 
   // --- Catégories
-  const wanted = [{ name: "Running", handle: "running" }, { name: "Urbaines", handle: "urbaines" }, { name: "Montantes", handle: "montantes" }]
+  const wanted = [{ name: "Running", handle: "running" }, { name: "Urbaines", handle: "urbaines" }, { name: "Montantes", handle: "montantes" }, { name: "Rétro", handle: "retro" }, { name: "Skate", handle: "skate" }]
   const { data: cats } = await query.graph({ entity: "product_category", fields: ["id", "handle"] })
   const catId: Record<string, string> = Object.fromEntries(cats.map((c: any) => [c.handle, c.id]))
   const missing = wanted.filter((w) => !catId[w.handle])
