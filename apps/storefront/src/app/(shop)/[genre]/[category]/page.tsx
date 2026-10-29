@@ -5,6 +5,10 @@ import { listProducts } from "@/lib/medusa"
 import { GENRES, toCard } from "@/lib/catalog"
 import { CATEGORY_INTRO, CATEGORY_LABEL } from "@/lib/content"
 import { ProductGrid } from "@/components/product-grid"
+import { JsonLd } from "@/components/json-ld"
+import { breadcrumbJsonLd } from "@/lib/jsonld"
+import { pageMeta } from "@/lib/seo"
+import { SITE_URL } from "@/lib/site"
 
 export const revalidate = 300
 
@@ -19,8 +23,9 @@ export async function generateMetadata({ params }: { params: Promise<{ genre: st
   const { genre, category } = await params
   const data = await load(genre, category)
   if (!data) return {}
-  const label = `${data.g.label} ${CATEGORY_LABEL[category] ?? category}`
-  return { title: label, description: `${label} : ${data.products.length} modèle(s), guide des tailles en cm, retours sous 14 jours.`, alternates: { canonical: `/${genre}/${category}` } }
+  const label = `${data.g.label} ${(CATEGORY_LABEL[category] ?? category).toLowerCase()}`
+  const n = data.products.length
+  return pageMeta({ title: label, description: `${label} : ${n} modèle${n > 1 ? "s" : ""}, guide des tailles en cm, livraison en France, retours sous 14 jours.`, path: `/${genre}/${category}` })
 }
 
 export default async function CategoryPage({ params }: { params: Promise<{ genre: string; category: string }> }) {
@@ -30,6 +35,9 @@ export default async function CategoryPage({ params }: { params: Promise<{ genre
   const label = CATEGORY_LABEL[category] ?? category
   return (
     <>
+      <JsonLd data={breadcrumbJsonLd([
+        { name: "Accueil", url: SITE_URL }, { name: data.g.label, url: `${SITE_URL}/${genre}` },
+        { name: label, url: `${SITE_URL}/${genre}/${category}` }])} />
       <nav aria-label="Fil d'Ariane" className="text-sm text-muted">
         <Link href="/" className="hover:text-accent">Accueil</Link> <span aria-hidden="true">›</span>{" "}
         <Link href={`/${genre}`} className="hover:text-accent">{data.g.label}</Link> <span aria-hidden="true">›</span> <span className="text-ink">{label}</span>

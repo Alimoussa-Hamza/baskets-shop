@@ -7,6 +7,7 @@ import { CATEGORY_LABEL, GENRE_INTRO } from "@/lib/content"
 import { ProductGrid } from "@/components/product-grid"
 import { JsonLd } from "@/components/json-ld"
 import { SITE_URL } from "@/lib/site"
+import { pageMeta } from "@/lib/seo"
 
 export const revalidate = 300
 export const dynamicParams = false
@@ -16,7 +17,7 @@ export async function generateMetadata({ params }: { params: Promise<{ genre: st
   const { genre } = await params
   const g = GENRES[genre]
   if (!g) return {}
-  return { title: g.label, description: `${g.label} : guide des tailles en cm, livraison en France, retours sous 14 jours.`, alternates: { canonical: `/${genre}` } }
+  return pageMeta({ title: g.label, description: `${g.label} : guide des tailles en cm, livraison en France, retours sous 14 jours.`, path: `/${genre}` })
 }
 
 export default async function GenrePage({ params }: { params: Promise<{ genre: string }> }) {

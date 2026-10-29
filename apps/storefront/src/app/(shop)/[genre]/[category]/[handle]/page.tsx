@@ -10,6 +10,7 @@ import { ProductCard } from "@/components/product-card"
 import { JsonLd } from "@/components/json-ld"
 import { SITE_URL } from "@/lib/site"
 import { productJsonLd, breadcrumbJsonLd } from "@/lib/jsonld"
+import { pageMeta } from "@/lib/seo"
 
 export const revalidate = 300
 
@@ -28,11 +29,12 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   const { handle } = await params
   const p = await getProduct(handle)
   if (!p) return {}
-  return {
+  return pageMeta({
     title: `${p.title} – ${p.subtitle ?? "Baskets"}`,
     description: `${p.title} à ${eur(minPrice(p))} : tailles ${GENRES[genreSlug(p.metadata?.gender)].label.toLowerCase()}, livraison 2 à 4 jours ouvrés, retours sous 14 jours.`,
-    alternates: { canonical: productPath(p) },
-  }
+    path: productPath(p),
+    images: (p.images ?? []).map((i) => i.url).slice(0, 1),
+  })
 }
 
 export default async function ProductPage({ params }: P) {
@@ -70,13 +72,13 @@ export default async function ProductPage({ params }: P) {
         <Link href={`/${genre}/${category}`} className="hover:text-accent">{catLabel}</Link> <span aria-hidden="true">›</span> <span className="text-ink">{p.title}</span>
       </nav>
 
-      <div className="mt-6 grid gap-10 lg:grid-cols-[1fr_420px]">
+      <div className="mt-6 grid gap-10 md:grid-cols-[1fr_340px] lg:grid-cols-[1fr_420px]">
         <div className="grid grid-cols-2 gap-3">
-          <div className="relative col-span-2 aspect-[4/5] overflow-hidden rounded-[12px]"><ProductImage src={images[0] ?? null} alt={p.title} priority sizes="(min-width:1024px) 60vw, 100vw" /></div>
+          <div className="relative col-span-2 aspect-[4/5] overflow-hidden rounded-[12px]"><ProductImage src={images[0] ?? null} alt={p.title} priority sizes="(min-width:768px) 60vw, 100vw" /></div>
           {images.slice(1, 5).map((src, i) => <div key={src} className="relative aspect-[4/5] overflow-hidden rounded-[12px]"><ProductImage src={src} alt={`${p.title}, vue ${i + 2}`} sizes="30vw" /></div>)}
         </div>
 
-        <div className="lg:sticky lg:top-6 lg:self-start">
+        <div className="md:sticky md:top-6 md:self-start">
           <p className="text-xs uppercase tracking-[0.14em] text-muted">{p.subtitle}</p>
           <h1 className="mt-1 text-3xl font-bold">{p.title}</h1>
           <ProductForm variants={variants} fitNote={fit} />
@@ -100,7 +102,7 @@ export default async function ProductPage({ params }: P) {
       {others.length > 0 && (
         <section aria-labelledby="similaires" className="mt-16">
           <h2 id="similaires" className="text-2xl font-semibold">Vous aimerez aussi</h2>
-          <ul className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">{others.map((o) => <li key={o.id}><ProductCard c={toCard(o)} /></li>)}</ul>
+          <ul className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">{others.map((o) => <li key={o.id}><ProductCard c={toCard(o)} /></li>)}</ul>
         </section>)}
     </>
   )

@@ -53,7 +53,7 @@ export function ProductForm({ variants, fitNote }: { variants: VariantLite[]; fi
           <legend className="text-sm font-medium">Choisir la taille EU</legend>
           <Link href="/guide-des-tailles" className="link text-sm">Guide des tailles</Link>
         </div>
-        <div className="mt-2 grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="mt-2 grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-4 xl:grid-cols-5">
           {sizes.map((s) => {
             const v = find(s); const out = !v || v.qty < 1; const low = !!v && v.qty > 0 && v.qty <= 3
             return (

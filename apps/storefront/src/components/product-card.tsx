@@ -12,7 +12,7 @@ export function ProductCard({ c, priority = false }: { c: Card; priority?: boole
           {c.inStock && c.lowStock && <span className="absolute left-3 top-3 rounded-full bg-danger px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">Dernières paires</span>}
         </div>
         <div className="p-4">
-          <div className="flex items-baseline justify-between gap-3">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
             <h3 className="font-display text-base font-semibold">{c.title}</h3>
             <p className="whitespace-nowrap text-base font-medium">{eur(c.price)}</p>
           </div>

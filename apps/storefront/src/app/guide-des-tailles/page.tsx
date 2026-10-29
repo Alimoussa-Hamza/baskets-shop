@@ -1,11 +1,12 @@
 import type { Metadata } from "next"
 import { SizeCalculator } from "@/components/size-calculator"
+import { pageMeta } from "@/lib/seo"
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: "Guide des tailles : trouvez votre pointure en cm",
   description: "Mesurez votre pied en 3 étapes et trouvez votre pointure de baskets grâce à notre calculateur et au tableau de conversion cm, EU, UK, US.",
-  alternates: { canonical: "/guide-des-tailles" },
-}
+  path: "/guide-des-tailles",
+})
 
 export default function SizeGuidePage() {
   const steps = [["Sur une feuille", "Posez votre pied nu sur une feuille de papier, le talon contre un mur."], ["Tracez le contour", "Tracez un trait devant votre orteil le plus long, le stylo bien vertical."], ["Mesurez en cm", "Mesurez la distance entre le bord de la feuille (talon) et votre trait : c'est la longueur de votre pied."]]
