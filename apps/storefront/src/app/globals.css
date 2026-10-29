@@ -19,7 +19,7 @@
 }
 
 html { color-scheme: light; }
-body { @apply bg-paper text-ink font-sans antialiased; line-height: 1.5; }
+body { @apply bg-paper text-ink font-sans antialiased; line-height: 1.5; overflow-x: clip; /* sections pleine largeur */ }
 h1, h2, h3 { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.01em; }
 
 /* Focus visible partout (WCAG 2.4.7) */

@@ -4,10 +4,10 @@ import { ProductImage } from "./product-image"
 
 export function ProductCard({ c, priority = false }: { c: Card; priority?: boolean }) {
   return (
-    <article className="group card overflow-hidden transition-shadow hover:shadow-md">
+    <article className="group card overflow-hidden transition-[box-shadow,transform] duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_-12px_rgba(17,17,17,0.25)]">
       <Link href={c.href} className="block">
         <div className="relative aspect-[4/5] overflow-hidden bg-[#ececE6]">
-          <ProductImage src={c.image} alt={c.title} priority={priority} />
+          <ProductImage src={c.image} alt={c.title} color={c.colors[0]} priority={priority} />
           {!c.inStock && <span className="absolute left-3 top-3 rounded-full bg-ink px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">Épuisé</span>}
           {c.inStock && c.lowStock && <span className="absolute left-3 top-3 rounded-full bg-danger px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">Dernières paires</span>}
         </div>

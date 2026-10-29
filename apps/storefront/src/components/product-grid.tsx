@@ -89,7 +89,7 @@ export function ProductGrid({ cards }: { cards: Card[] }) {
 
   return (
     <div className="grid gap-10 lg:grid-cols-[260px_1fr]">
-      <aside aria-label="Filtres" className="hidden lg:block lg:sticky lg:top-6 lg:self-start">
+      <aside aria-label="Filtres" className="hidden lg:block lg:sticky lg:top-24 lg:self-start">
         <div className="mb-6 flex items-center justify-between border-b border-line pb-4">
           <h2 className="text-sm font-semibold uppercase tracking-[0.12em]">Filtres</h2>
           {active.length > 0 && <button type="button" onClick={reset} className="link text-sm">Effacer</button>}

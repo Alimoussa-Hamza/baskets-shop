@@ -74,11 +74,11 @@ export default async function ProductPage({ params }: P) {
 
       <div className="mt-6 grid gap-10 md:grid-cols-[1fr_340px] lg:grid-cols-[1fr_420px]">
         <div className="grid grid-cols-2 gap-3">
-          <div className="relative col-span-2 aspect-[4/5] overflow-hidden rounded-[12px]"><ProductImage src={images[0] ?? null} alt={p.title} priority sizes="(min-width:768px) 60vw, 100vw" /></div>
+          <div className="relative col-span-2 aspect-[4/5] overflow-hidden rounded-[12px]"><ProductImage src={images[0] ?? null} alt={p.title} color={variants[0]?.color} priority sizes="(min-width:768px) 60vw, 100vw" /></div>
           {images.slice(1, 5).map((src, i) => <div key={src} className="relative aspect-[4/5] overflow-hidden rounded-[12px]"><ProductImage src={src} alt={`${p.title}, vue ${i + 2}`} sizes="30vw" /></div>)}
         </div>
 
-        <div className="md:sticky md:top-6 md:self-start">
+        <div className="md:sticky md:top-24 md:self-start">
           <p className="text-xs uppercase tracking-[0.14em] text-muted">{p.subtitle}</p>
           <h1 className="mt-1 text-3xl font-bold">{p.title}</h1>
           <ProductForm variants={variants} fitNote={fit} />

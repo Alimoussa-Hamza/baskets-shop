@@ -10,7 +10,7 @@ export function OrderSummary({ cart }: { cart: Cart }) {
       <ul className="mt-5 divide-y divide-line border-y border-line">
         {cart.items.map((i) => (
           <li key={i.id} className="flex gap-4 py-4">
-            <div className="relative h-20 w-16 shrink-0 overflow-hidden rounded-[8px]"><ProductImage src={i.thumbnail ?? null} alt={i.title} sizes="64px" /></div>
+            <div className="relative h-20 w-16 shrink-0 overflow-hidden rounded-[8px]"><ProductImage src={i.thumbnail ?? null} alt={i.title} color={i.variant_title?.split(" / ")[1]} sizes="64px" /></div>
             <div className="flex-1 text-sm"><p className="font-semibold">{i.title}</p><p className="text-muted">{i.variant_title} · Quantité {i.quantity}</p><p className="mt-1 font-medium">{eur(i.total)}</p></div>
           </li>))}
       </ul>

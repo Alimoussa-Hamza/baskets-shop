@@ -23,7 +23,7 @@ export function CartLines({ items }: { items: CartItem[] }) {
       <ul className="divide-y divide-line border-y border-line">
         {items.map((i) => (
           <li key={i.id} className="flex gap-4 py-6">
-            <div className="relative h-32 w-28 shrink-0 overflow-hidden rounded-[8px]"><ProductImage src={i.thumbnail ?? null} alt={i.title} sizes="112px" /></div>
+            <div className="relative h-32 w-28 shrink-0 overflow-hidden rounded-[8px]"><ProductImage src={i.thumbnail ?? null} alt={i.title} color={i.variant_title?.split(" / ")[1]} sizes="112px" /></div>
             <div className="flex flex-1 flex-col">
               <div className="flex justify-between gap-4">
                 <div>
