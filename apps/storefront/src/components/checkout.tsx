@@ -49,6 +49,15 @@ export function Checkout({ initial, total, testPayment, stripeKey }: { initial: 
     if (!r.ok) return fail(r.error)
     setClientSecret(r.clientSecret)
   }
+  // Nouvelle session Stripe au montant à jour (panier modifié pendant le paiement) ; le message d'erreur reste affiché
+  function refreshCard() {
+    router.refresh()
+    start(async () => {
+      const r = await startCardPayment()
+      if (!r.ok) return fail(r.error)
+      setClientSecret(r.clientSecret)
+    })
+  }
   function chooseMethod(m: "card" | "test") {
     setMethod(m); setError(null)
     if (m === "card" && !clientSecret) start(prepareCard)
@@ -130,7 +139,7 @@ export function Checkout({ initial, total, testPayment, stripeKey }: { initial: 
                 </fieldset>)}
               {method === "card" && stripeKey ? (
                 clientSecret
-                  ? <CardPayment publishableKey={stripeKey} clientSecret={clientSecret} accepted={accepted} label={payLabel} onError={setError}>{legal}</CardPayment>
+                  ? <CardPayment key={clientSecret} publishableKey={stripeKey} clientSecret={clientSecret} accepted={accepted} label={payLabel} onError={setError} onStale={refreshCard}>{legal}</CardPayment>
                   : <>{error ? legal : <p className="text-sm text-muted" aria-live="polite">Chargement du paiement sécurisé…</p>}</>
               ) : testPayment ? (
                 <form onSubmit={pay} className="space-y-5">

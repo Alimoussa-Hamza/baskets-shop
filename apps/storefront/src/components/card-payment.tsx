@@ -15,7 +15,7 @@ const appearance = {
   variables: { colorPrimary: "#1f4fff", colorText: "#111111", colorDanger: "#b42318", fontFamily: "Inter, system-ui, sans-serif", borderRadius: "8px", spacingUnit: "4px" },
 }
 
-type Props = { publishableKey: string; clientSecret: string; accepted: boolean; label: string; onError: (m: string | null) => void; children?: ReactNode }
+type Props = { publishableKey: string; clientSecret: string; accepted: boolean; label: string; onError: (m: string | null) => void; onStale: () => void; children?: ReactNode }
 
 export function CardPayment(props: Props) {
   return (
@@ -25,7 +25,7 @@ export function CardPayment(props: Props) {
   )
 }
 
-function CardForm({ accepted, label, onError, children }: Props) {
+function CardForm({ accepted, label, onError, onStale, children }: Props) {
   const stripe = useStripe()
   const elements = useElements()
   const [busy, setBusy] = useState(false)
@@ -42,6 +42,12 @@ function CardForm({ accepted, label, onError, children }: Props) {
     })
     if (error) {
       setBusy(false)
+      // Panier modifié ailleurs (autre onglet) pendant le paiement : Medusa a annulé l'ancien paiement.
+      // On rouvre une session au nouveau montant plutôt que de laisser le client bloqué.
+      if (error.code === "payment_intent_unexpected_state" || error.payment_intent?.status === "canceled") {
+        onError("Votre panier a été modifié pendant le paiement. Aucun montant n'a été débité : vérifiez le nouveau total, puis payez à nouveau.")
+        return onStale()
+      }
       return onError(error.type === "card_error" || error.type === "validation_error" ? error.message ?? "Paiement refusé." : "Le paiement n'a pas abouti. Aucun montant n'a été débité.")
     }
     const r = await placeOrder(true, "card") // succès : redirection serveur vers la confirmation
