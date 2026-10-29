@@ -1,7 +1,7 @@
 # Boutique de baskets
 
 Monorepo : `apps/backend` (Medusa 2.22.1), `apps/storefront` (Next.js 16.4.3), infra locale Docker.
-Documents : [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · [`docs/BUSINESS_PLAN.md`](docs/BUSINESS_PLAN.md).
+Documents : [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · [`docs/BUSINESS_PLAN.md`](docs/BUSINESS_PLAN.md) · [`docs/DEPLOIEMENT.md`](docs/DEPLOIEMENT.md) (staging sur Railway).
 
 ## Démarrage local
 

@@ -27,7 +27,8 @@ export default defineConfig({
       cookieSecret: need("COOKIE_SECRET"),
     },
     // SSL base : en prod, fournir le CA du fournisseur (rejectUnauthorized: true) dès que possible
-    databaseDriverOptions: isProd ? { connection: { ssl: { rejectUnauthorized: false } } } : {},
+    // DATABASE_SSL=false pour un réseau privé sans SSL (ex. connexion interne de l'hébergeur)
+    databaseDriverOptions: isProd && process.env.DATABASE_SSL !== "false" ? { connection: { ssl: { rejectUnauthorized: false } } } : {},
   },
   admin: {
     disable: process.env.DISABLE_MEDUSA_ADMIN === "true",
