@@ -2,6 +2,7 @@ import { defineRouteConfig } from "@medusajs/admin-sdk"
 import { TruckFast } from "@medusajs/icons"
 import { Button, Container, Heading, Input, StatusBadge, Table, Text, toast } from "@medusajs/ui"
 import { useCallback, useEffect, useState } from "react"
+import { api, eurCents } from "../../lib/api"
 
 // Commandes fournisseur (dropshipping) : suivi de la transmission, saisie du numéro de suivi, relance en cas d'échec.
 type Row = {
@@ -15,17 +16,7 @@ const STATUS: Record<Row["status"], { label: string; color: "orange" | "blue" | 
   to_place: { label: "À passer", color: "orange" }, placed: { label: "Transmise", color: "blue" },
   shipped: { label: "Expédiée", color: "green" }, delivered: { label: "Livrée", color: "green" }, cancelled: { label: "Annulée", color: "grey" },
 }
-const eur = (cents: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(cents / 100)
 
-async function api<T>(path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`/admin${path}`, {
-    method: body ? "POST" : "GET", credentials: "include",
-    headers: body ? { "Content-Type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined,
-  })
-  const json = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(json.message ?? `Erreur ${res.status}`)
-  return json as T
-}
 
 function ShipForm({ row, onDone }: { row: Row; onDone: () => void }) {
   const [tracking, setTracking] = useState("")
@@ -84,7 +75,7 @@ const SupplierOrdersPage = () => {
                 <Table.Cell><a className="text-ui-fg-interactive" href={`/app/orders/${r.order_id}`}>#{r.order_display_id ?? "?"}</a></Table.Cell>
                 <Table.Cell>{r.supplier.name}<div className="text-ui-fg-muted text-xs">{r.supplier.integration === "cj" ? "API CJ" : "E-mail"}{r.supplier_reference ? ` · ${r.supplier_reference}` : ""}</div></Table.Cell>
                 <Table.Cell>{r.lines.map((l, i) => <div key={i}>{l.quantity} × {l.title}{l.variant ? ` (${l.variant})` : ""}</div>)}</Table.Cell>
-                <Table.Cell>{r.cost_total_cents === null ? "—" : eur(r.cost_total_cents)}</Table.Cell>
+                <Table.Cell>{r.cost_total_cents === null ? "—" : eurCents(r.cost_total_cents)}</Table.Cell>
                 <Table.Cell>
                   <StatusBadge color={STATUS[r.status].color}>{STATUS[r.status].label}</StatusBadge>
                   {r.last_error && <div className="text-ui-fg-error mt-1 max-w-[260px] text-xs">{r.last_error}</div>}

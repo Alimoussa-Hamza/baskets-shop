@@ -72,7 +72,8 @@ Décision du 29/10/2026 : CJdropshipping pour démarrer, **uniquement des modèl
 - **CJ** : commandes créées avec `payType=3` (création seule) : **aucun paiement automatique**, validation et paiement dans l'espace CJ. `CJ_SANDBOX=1` pour les essais. Limite API : 1 appel/s. Jeton : 180 jours, gardé en mémoire.
 - **Admin** : page « Commandes fournisseur » (`src/admin/routes/supplier-orders`) ; saisie du suivi → e-mail « votre commande est en route » au client. Routes : `GET /admin/supplier-orders`, `POST /admin/supplier-orders/:id/ship`, `POST /admin/supplier-orders/:id/retry`.
 - **Testé en local le 29/10/2026** : transmission par e-mail (Mailpit), coût d'achat, saisie du suivi + e-mail client, idempotence, erreur CJ sans clé. **Non testé** : appel réel à l'API CJ (pas de compte), webhooks CJ.
-- **Reste** : import du catalogue CJ, synchro stock/prix planifiée, récupération automatique du suivi (webhook CJ), page admin de gestion des fournisseurs (aujourd'hui : script `src/scripts/seed-supplier-demo.ts` pour la démo).
+- **Admin** (29/10/2026) : page « Fournisseurs » (création, modification, désactivation ; transporteur obligatoire pour CJ) et encart « Fournisseur » sur la fiche produit (fournisseur, référence et prix d'achat HT par variante, marge par paire à TVA 20 %). Routes : `GET/POST /admin/suppliers`, `POST /admin/suppliers/:id`, `POST /admin/products/:id/supplier`. Medusa fusionne les métadonnées : une clé est supprimée en l'envoyant vide.
+- **Reste** : import du catalogue CJ, synchro stock/prix planifiée, récupération automatique du suivi (webhook CJ).
 
 ## 6. Paiement et stock
 
