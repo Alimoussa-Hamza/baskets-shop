@@ -1,10 +1,11 @@
 "use client"
 
 import Link from "next/link"
-import { useMemo, useState, useTransition } from "react"
+import { useEffect, useMemo, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { addToCart } from "@/lib/cart-actions"
 import { COLOR_HEX, eur } from "@/lib/catalog"
+import { useProductColor } from "./product-color"
 
 export type VariantLite = { id: string; size: string; color: string; qty: number; price: number }
 
@@ -16,6 +17,8 @@ export function ProductForm({ variants, fitNote }: { variants: VariantLite[]; fi
   const [color, setColor] = useState(colors.find((c) => variants.some((v) => v.color === c && v.qty > 0)) ?? colors[0])
   const [size, setSize] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const { setColor: shareColor } = useProductColor()
+  useEffect(() => shareColor(color), [color, shareColor]) // l'image principale suit la couleur choisie
 
   const find = (s: string, c = color) => variants.find((v) => v.size === s && v.color === c)
   const chosen = size ? find(size) : undefined

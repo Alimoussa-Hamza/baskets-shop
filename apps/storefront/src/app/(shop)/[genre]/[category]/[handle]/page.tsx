@@ -6,6 +6,7 @@ import { GENRES, eur, minPrice, optionValue, productPath, toCard, genreSlug } fr
 import { CATEGORY_LABEL } from "@/lib/content"
 import { ProductForm, type VariantLite } from "@/components/product-form"
 import { ProductImage } from "@/components/product-image"
+import { ProductColorProvider, ProductMainImage } from "@/components/product-color"
 import { ProductCard } from "@/components/product-card"
 import { JsonLd } from "@/components/json-ld"
 import { SITE_URL } from "@/lib/site"
@@ -72,9 +73,11 @@ export default async function ProductPage({ params }: P) {
         <Link href={`/${genre}/${category}`} className="hover:text-accent">{catLabel}</Link> <span aria-hidden="true">›</span> <span className="text-ink">{p.title}</span>
       </nav>
 
+      {/* Même couleur initiale que ProductForm : la première en stock */}
+      <ProductColorProvider initial={[...new Set(variants.map((v) => v.color))].find((c) => variants.some((v) => v.color === c && v.qty > 0)) ?? variants[0]?.color ?? null}>
       <div className="mt-6 grid gap-10 md:grid-cols-[1fr_340px] lg:grid-cols-[1fr_420px]">
         <div className="grid grid-cols-2 gap-3">
-          <div className="relative col-span-2 aspect-[4/5] overflow-hidden rounded-[12px]"><ProductImage src={images[0] ?? null} alt={p.title} color={variants[0]?.color} priority sizes="(min-width:768px) 60vw, 100vw" /></div>
+          <div className="relative col-span-2 aspect-[4/5] overflow-hidden rounded-[12px]"><ProductMainImage src={images[0] ?? null} alt={p.title} /></div>
           {images.slice(1, 5).map((src, i) => <div key={src} className="relative aspect-[4/5] overflow-hidden rounded-[12px]"><ProductImage src={src} alt={`${p.title}, vue ${i + 2}`} sizes="30vw" /></div>)}
         </div>
 
@@ -93,6 +96,7 @@ export default async function ProductPage({ params }: P) {
           </div>
         </div>
       </div>
+      </ProductColorProvider>
 
       <section aria-labelledby="avis" className="mt-16 border-t border-line pt-10">
         <h2 id="avis" className="text-2xl font-semibold">Avis clients</h2>

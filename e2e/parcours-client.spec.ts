@@ -42,7 +42,11 @@ test("parcours client complet", async ({ page }, info) => {
   })
 
   await test.step("catalogue : menu, filtre taille, tri par prix", async () => {
-    await page.getByRole("banner").getByRole("link", { name: /femme/i }).first().click()
+    const burger = page.getByRole("button", { name: "Ouvrir le menu" }) // téléphone : menu latéral
+    if (await burger.isVisible()) {
+      await burger.click()
+      await page.getByRole("dialog", { name: "Menu" }).getByRole("link", { name: "Femme", exact: true }).click()
+    } else await page.getByRole("banner").getByRole("link", { name: /femme/i }).first().click()
     await expect(page.getByRole("heading", { level: 1, name: "Baskets femme" })).toBeVisible()
     const filters = await openFilters(page)
     await filters.getByRole("button", { name: "38", exact: true }).click()
@@ -112,7 +116,11 @@ test("parcours client complet", async ({ page }, info) => {
   })
 
   await test.step("dropshipping : commande transmise au fournisseur", async () => {
-    test.skip(!process.env.ADMIN_EMAIL || !process.env.ADMIN_PASSWORD, "ADMIN_EMAIL / ADMIN_PASSWORD non fournis")
+    // Sans identifiants admin, seule cette vérification est sautée (test.skip sauterait tout le parcours)
+    if (!process.env.ADMIN_EMAIL || !process.env.ADMIN_PASSWORD) {
+      info.annotations.push({ type: "skip", description: "transmission fournisseur non vérifiée : ADMIN_EMAIL / ADMIN_PASSWORD non fournis" })
+      return
+    }
     const auth = await fetch(`${BACKEND}/auth/user/emailpass`, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: process.env.ADMIN_EMAIL, password: process.env.ADMIN_PASSWORD }),
