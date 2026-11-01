@@ -62,6 +62,12 @@ export const ProductSupplierSchema = z.object({
   })).max(500),
 })
 
+export const CjImportSchema = z.object({
+  supplier_id: z.string().max(64),
+  category_id: z.string().max(64),
+  gender: z.enum(["female", "male"]), // rayons de la boutique : baskets-femme, baskets-homme
+})
+
 // Bandeau d'offre (Black Friday, Noël…) : lien interne uniquement, date de fin facultative
 export const CampaignSchema = z.object({
   active: z.boolean(),
@@ -76,6 +82,7 @@ export default defineMiddlewares({
     { matcher: "/admin/suppliers", method: "POST", middlewares: [validateAndTransformBody(CreateSupplierSchema)] },
     { matcher: "/admin/suppliers/:id", method: "POST", middlewares: [validateAndTransformBody(UpdateSupplierSchema)] },
     { matcher: "/admin/products/:id/supplier", method: "POST", middlewares: [validateAndTransformBody(ProductSupplierSchema)] },
+    { matcher: "/admin/cj/products/:pid/import", method: "POST", middlewares: [validateAndTransformBody(CjImportSchema)] },
     { matcher: "/admin/supplier-orders/:id/ship", method: "POST", middlewares: [validateAndTransformBody(ShipSupplierOrderSchema)] },
     { matcher: "/store/withdrawals/start", method: "POST", middlewares: [rateLimit, validateAndTransformBody(StartWithdrawalSchema)] },
     { matcher: "/store/withdrawals/confirm", method: "POST", middlewares: [rateLimit, validateAndTransformBody(ConfirmWithdrawalSchema)] },
