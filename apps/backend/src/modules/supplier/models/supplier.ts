@@ -1,5 +1,6 @@
 import { model } from "@medusajs/framework/utils"
 import SupplierOrder from "./supplier-order"
+import SupplierVariant from "./supplier-variant"
 
 const Supplier = model.define("supplier", {
   id: model.id({ prefix: "sup" }).primaryKey(),
@@ -16,6 +17,7 @@ const Supplier = model.define("supplier", {
   logistic_name: model.text().nullable(), // transporteur imposé par l'API CJ (ex. « CJPacket Euro Ordinary »)
   active: model.boolean().default(true),
   orders: model.hasMany(() => SupplierOrder, { mappedBy: "supplier" }),
+  variants: model.hasMany(() => SupplierVariant, { mappedBy: "supplier" }),
 })
 
 export default Supplier

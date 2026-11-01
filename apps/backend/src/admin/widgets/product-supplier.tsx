@@ -5,9 +5,10 @@ import { useEffect, useState } from "react"
 import { api, eurCents } from "../lib/api"
 
 // Encart « Fournisseur » de la fiche produit : fournisseur, référence et prix d'achat HT par variante, marge par paire.
-// Données portées par les métadonnées des variantes (supplier_id, supplier_sku, supplier_cost_cents).
+// Données rangées dans la table privée supplier_variant (route /admin/products/:id/supplier), invisible de la boutique.
 type Supplier = { id: string; name: string; integration: "email" | "cj"; active: boolean }
-type Variant = { id: string; title: string; sku: string | null; metadata: Record<string, unknown> | null; prices?: { amount: number; currency_code: string }[] }
+type Variant = { id: string; title: string; sku: string | null; prices?: { amount: number; currency_code: string }[] }
+type Sourcing = { supplier_id: string | null; variants: { variant_id: string; supplier_sku: string | null; supplier_cost_cents: number | null }[] }
 type Row = { id: string; title: string; sku: string; cost: string; priceTtc: number | null }
 
 const NONE = "__none__"
@@ -22,18 +23,20 @@ const ProductSupplierWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
   useEffect(() => {
     Promise.all([
       api<{ suppliers: Supplier[] }>("/suppliers"),
-      api<{ product: { variants: Variant[] } }>(`/products/${data.id}?fields=id,*variants,variants.metadata,*variants.prices`),
-    ]).then(([s, p]) => {
+      api<{ product: { variants: Variant[] } }>(`/products/${data.id}?fields=id,*variants,*variants.prices`),
+      api<Sourcing>(`/products/${data.id}/supplier`),
+    ]).then(([s, p, src]) => {
       setSuppliers(s.suppliers)
-      const vs = p.product.variants ?? []
-      const current = vs.map((v) => v.metadata?.supplier_id).find((x): x is string => typeof x === "string")
-      setSupplierId(current ?? NONE)
-      setRows(vs.map((v) => ({
-        id: v.id, title: v.title,
-        sku: typeof v.metadata?.supplier_sku === "string" ? v.metadata.supplier_sku : "",
-        cost: typeof v.metadata?.supplier_cost_cents === "number" ? (v.metadata.supplier_cost_cents / 100).toFixed(2).replace(".", ",") : "",
-        priceTtc: v.prices?.find((x) => x.currency_code === "eur")?.amount ?? null,
-      })))
+      const byVariant = new Map(src.variants.map((x) => [x.variant_id, x]))
+      setSupplierId(src.supplier_id ?? NONE)
+      setRows((p.product.variants ?? []).map((v) => {
+        const cost = byVariant.get(v.id)?.supplier_cost_cents
+        return {
+          id: v.id, title: v.title, sku: byVariant.get(v.id)?.supplier_sku ?? "",
+          cost: typeof cost === "number" ? (cost / 100).toFixed(2).replace(".", ",") : "",
+          priceTtc: v.prices?.find((x) => x.currency_code === "eur")?.amount ?? null,
+        }
+      }))
     }).catch((e) => toast.error("Chargement impossible", { description: e.message }))
   }, [data.id])
 

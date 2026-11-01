@@ -2,7 +2,7 @@ import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
 import { SUPPLIER_MODULE } from "../modules/supplier"
 import type SupplierModuleService from "../modules/supplier/service"
-import { costTotalCents, groupLinesBySupplier, type OrderLine, type SupplierLine } from "./supplier-lines"
+import { costTotalCents, groupLinesBySupplier, type OrderLine, type SupplierLine, type VariantSourcing } from "./supplier-lines"
 import { createCjOrder } from "./cj"
 import { purchaseOrder, shipmentNotice } from "./emails"
 
@@ -14,7 +14,7 @@ async function loadOrder(container: MedusaContainer, orderId: string) {
     entity: "order",
     fields: [
       "id", "display_id", "email", "items.id", "items.title", "items.variant_title", "items.quantity",
-      "items.variant.sku", "items.variant.metadata", "items.product.metadata", "shipping_address.*",
+      "items.variant_id", "items.variant.sku", "shipping_address.*",
     ],
     filters: { id: orderId },
   })
@@ -27,7 +27,10 @@ export async function createSupplierOrdersForOrder(container: MedusaContainer, o
   const svc: SupplierModuleService = container.resolve(SUPPLIER_MODULE)
   const order = await loadOrder(container, orderId)
   if (!order) return []
-  const { bySupplier, unassigned } = groupLinesBySupplier(order.items ?? [])
+  const variantIds = (order.items ?? []).map((i) => i.variant_id).filter((x): x is string => !!x)
+  const rows = variantIds.length ? await svc.listSupplierVariants({ variant_id: variantIds }, { relations: ["supplier"] }) : []
+  const sourcing = new Map<string, VariantSourcing>(rows.map((r) => [r.variant_id, { supplier_id: r.supplier.id, sku: r.sku, cost_cents: r.cost_cents }]))
+  const { bySupplier, unassigned } = groupLinesBySupplier(order.items ?? [], sourcing)
   if (unassigned.length) logger.warn(`[fournisseur] commande #${order.display_id} : ${unassigned.length} ligne(s) sans fournisseur (${unassigned.map((l) => l.title).join(", ")}) : à traiter à la main`)
   const existing = await svc.listSupplierOrders({ order_id: order.id }, { relations: ["supplier"] })
   const done = new Set(existing.map((o) => o.supplier.id))
