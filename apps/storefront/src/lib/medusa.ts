@@ -25,7 +25,7 @@ export type Variant = {
   sku?: string | null
   inventory_quantity?: number | null
   options?: { value: string; option?: { title: string } | null }[]
-  calculated_price?: { calculated_amount: number; currency_code: string } | null
+  calculated_price?: { calculated_amount: number; original_amount?: number; is_calculated_price_price_list?: boolean; currency_code: string } | null
   metadata?: Record<string, unknown> | null
 }
 export type Product = {
@@ -45,7 +45,8 @@ export type Product = {
 const PRODUCT_FIELDS = [
   "id", "title", "handle", "subtitle", "description", "thumbnail", "metadata",
   "*images", "*categories", "*options", "*options.values",
-  "variants.id", "variants.title", "variants.sku", "variants.inventory_quantity", "variants.metadata",
+  // « variants.metadata » est ignoré par l'API boutique : « *variants » est nécessaire (prix de référence 30 jours)
+  "*variants", "variants.inventory_quantity",
   "*variants.options", "*variants.options.option", "variants.calculated_price", // « variants.options.option.title » seul renvoie options vides
 ].join(",")
 

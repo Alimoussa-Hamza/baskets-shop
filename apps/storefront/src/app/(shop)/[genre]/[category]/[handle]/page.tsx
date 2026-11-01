@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound, permanentRedirect } from "next/navigation"
 import { getProduct, listProducts } from "@/lib/medusa"
-import { GENRES, eur, minPrice, optionValue, productPath, toCard, genreSlug } from "@/lib/catalog"
+import { GENRES, eur, minPrice, optionValue, productPath, toCard, genreSlug, compareAt } from "@/lib/catalog"
 import { CATEGORY_LABEL } from "@/lib/content"
 import { ProductForm, type VariantLite } from "@/components/product-form"
 import { ProductImage } from "@/components/product-image"
@@ -47,7 +47,7 @@ export default async function ProductPage({ params }: P) {
 
   const variants: VariantLite[] = (p.variants ?? []).flatMap((v) => {
     const size = optionValue(v, "Taille"); const color = optionValue(v, "Couleur"); const price = v.calculated_price?.calculated_amount
-    return size && color && typeof price === "number" ? [{ id: v.id, size, color, qty: v.inventory_quantity ?? 0, price }] : []
+    return size && color && typeof price === "number" ? [{ id: v.id, size, color, qty: v.inventory_quantity ?? 0, price, compareAt: compareAt(v) }] : []
   })
   const g = GENRES[genre]
   const catLabel = CATEGORY_LABEL[category] ?? category

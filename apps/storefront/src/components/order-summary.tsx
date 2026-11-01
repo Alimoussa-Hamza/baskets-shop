@@ -15,7 +15,9 @@ export function OrderSummary({ cart }: { cart: Cart }) {
           </li>))}
       </ul>
       <dl className="mt-5 space-y-3 text-sm">
-        <div className="flex justify-between"><dt className="text-muted">Sous-total</dt><dd>{eur(cart.item_total)}</dd></div>
+        {/* item_total est déjà remisé : sous-total affiché avant remise, puis la réduction */}
+        <div className="flex justify-between"><dt className="text-muted">Sous-total</dt><dd>{eur(cart.item_total + (cart.discount_total ?? 0))}</dd></div>
+        {(cart.discount_total ?? 0) > 0 && <div className="flex justify-between"><dt className="text-muted">Réduction</dt><dd>−{eur(cart.discount_total!)}</dd></div>}
         <div className="flex justify-between"><dt className="text-muted">Livraison</dt><dd>{chosen ? (chosen.amount === 0 ? "Offerte" : eur(chosen.amount)) : <em>Calculée à l'étape suivante</em>}</dd></div>
       </dl>
       <div className="mt-5 flex items-baseline justify-between border-t border-line pt-5"><span className="font-semibold">Total TTC</span><span className="font-display text-3xl font-bold">{eur(cart.total)}</span></div>

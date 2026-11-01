@@ -4,10 +4,10 @@ import Link from "next/link"
 import { useEffect, useMemo, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { addToCart } from "@/lib/cart-actions"
-import { COLOR_HEX, eur } from "@/lib/catalog"
+import { COLOR_HEX, discountPct, eur } from "@/lib/catalog"
 import { useProductColor } from "./product-color"
 
-export type VariantLite = { id: string; size: string; color: string; qty: number; price: number }
+export type VariantLite = { id: string; size: string; color: string; qty: number; price: number; compareAt: number | null }
 
 export function ProductForm({ variants, fitNote }: { variants: VariantLite[]; fitNote?: string }) {
   const router = useRouter()
@@ -23,6 +23,8 @@ export function ProductForm({ variants, fitNote }: { variants: VariantLite[]; fi
   const find = (s: string, c = color) => variants.find((v) => v.size === s && v.color === c)
   const chosen = size ? find(size) : undefined
   const price = chosen?.price ?? Math.min(...variants.map((v) => v.price))
+  // Prix barré : celui de la variante choisie, sinon de la moins chère
+  const ref = chosen ? chosen.compareAt : (variants.find((v) => v.price === price)?.compareAt ?? null)
 
   function submit() {
     setError(null)
@@ -37,7 +39,12 @@ export function ProductForm({ variants, fitNote }: { variants: VariantLite[]; fi
 
   return (
     <div>
-      <p className="text-2xl font-medium">{eur(price)}</p>
+      <p className="flex flex-wrap items-baseline gap-x-3 text-2xl font-medium">
+        {ref && <s className="text-lg text-muted" aria-label={`Prix de référence ${eur(ref)}`}>{eur(ref)}</s>}
+        <span className={ref ? "text-accent" : ""}>{eur(price)}</span>
+        {ref && <span className="bg-accent px-2 py-0.5 text-xs font-bold uppercase tracking-[0.08em] text-white">−{discountPct(price, ref)} %</span>}
+      </p>
+      {ref && <p className="mt-1 text-xs text-muted">Prix barré : prix le plus bas pratiqué sur les 30 derniers jours.</p>}
 
       <fieldset className="mt-6">
         <legend className="text-sm">Couleur : <span className="font-medium">{color}</span></legend>

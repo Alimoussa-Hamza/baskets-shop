@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { COLOR_HEX, eur, type Card } from "@/lib/catalog"
+import { COLOR_HEX, discountPct, eur, type Card } from "@/lib/catalog"
 import { ProductImage } from "./product-image"
 
 // Carte sans cadre (références : Veja, Allbirds) : visuel sur fond uni, infos dessous ; la grille parente trace les filets.
@@ -10,12 +10,16 @@ export function ProductCard({ c, priority = false }: { c: Card; priority?: boole
         <div className="relative aspect-square overflow-hidden">
           <ProductImage src={c.image} alt={c.title} color={c.colors[0]} priority={priority} />
           {!c.inStock && <span className="absolute left-3 top-3 bg-ink px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-white">Épuisé</span>}
+          {c.compareAt && c.inStock && <span className="absolute right-3 top-3 bg-accent px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-white">−{discountPct(c.price, c.compareAt)} %</span>}
           {c.inStock && c.lowStock && <span className="absolute left-3 top-3 bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-danger">Dernières paires</span>}
         </div>
         <div className="flex flex-1 flex-col px-4 pb-5 pt-3">
           <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
             <h3 className="text-[15px] font-semibold uppercase tracking-[0.04em] underline-offset-4 group-hover:underline">{c.title}</h3>
-            <p className="whitespace-nowrap text-[15px]">{eur(c.price)}</p>
+            <p className="whitespace-nowrap text-[15px]">
+              {c.compareAt && <s className="mr-1.5 text-muted" aria-label={`Prix de référence ${eur(c.compareAt)}`}>{eur(c.compareAt)}</s>}
+              <span className={c.compareAt ? "font-semibold text-accent" : ""}>{eur(c.price)}</span>
+            </p>
           </div>
           <p className="mt-0.5 text-sm text-muted">{c.subtitle}</p>
           <ul className="mt-3 flex gap-1.5" aria-label={`Couleurs : ${c.colors.join(", ")}`}>

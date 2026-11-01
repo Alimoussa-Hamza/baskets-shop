@@ -62,8 +62,17 @@ export const ProductSupplierSchema = z.object({
   })).max(500),
 })
 
+// Bandeau d'offre (Black Friday, Noël…) : lien interne uniquement, date de fin facultative
+export const CampaignSchema = z.object({
+  active: z.boolean(),
+  text: z.string().trim().max(120),
+  link: z.string().trim().max(200).regex(/^\/[^/]/, "Lien interne commençant par /").nullish(),
+  ends_at: z.string().datetime().nullish(),
+}).refine((c) => !c.active || c.text.length > 0, { message: "Texte obligatoire pour activer le bandeau", path: ["text"] })
+
 export default defineMiddlewares({
   routes: [
+    { matcher: "/admin/campaign", method: "POST", middlewares: [validateAndTransformBody(CampaignSchema)] },
     { matcher: "/admin/suppliers", method: "POST", middlewares: [validateAndTransformBody(CreateSupplierSchema)] },
     { matcher: "/admin/suppliers/:id", method: "POST", middlewares: [validateAndTransformBody(UpdateSupplierSchema)] },
     { matcher: "/admin/products/:id/supplier", method: "POST", middlewares: [validateAndTransformBody(ProductSupplierSchema)] },

@@ -21,7 +21,10 @@ export default async function CartPage() {
   const chosen = cart.shipping_methods?.[0]
   const estimate = chosen ? chosen.amount : await getShippingEstimate(cart.id)
   const shipping = estimate ?? 0
-  const total = cart.item_total + (chosen ? 0 : shipping) - (cart.discount_total ?? 0) // item_total est TTC ; la livraison choisie est déjà dans cart.total
+  // item_total est TTC et DÉJÀ remisé (codes promo) : ne pas retirer discount_total une seconde fois.
+  // La livraison choisie est déjà dans cart.total.
+  const total = cart.item_total + (chosen ? 0 : shipping)
+  const beforeDiscount = cart.item_total + (cart.discount_total ?? 0)
   const grand = chosen ? cart.total : total
   const missing = Math.max(0, FREE_SHIPPING_THRESHOLD - cart.item_total)
   const vat = chosen ? cart.tax_total : cart.tax_total + (shipping - shipping / 1.2)
@@ -41,7 +44,7 @@ export default async function CartPage() {
         <aside className="card h-fit p-6" aria-label="Récapitulatif">
           <h2 className="text-xl font-semibold">Récapitulatif</h2>
           <dl className="mt-5 space-y-3 border-t border-line pt-5 text-sm">
-            <div className="flex justify-between"><dt className="text-muted">Sous-total</dt><dd>{eur(cart.item_total)}</dd></div>
+            <div className="flex justify-between"><dt className="text-muted">Sous-total</dt><dd>{eur(beforeDiscount)}</dd></div>
             {(cart.discount_total ?? 0) > 0 && <div className="flex justify-between"><dt className="text-muted">Réduction</dt><dd>−{eur(cart.discount_total!)}</dd></div>}
             <div className="flex justify-between"><dt className="text-muted">Livraison {chosen ? "" : "estimée"}</dt><dd>{estimate === null ? "À l'étape suivante" : shipping === 0 ? "Offerte" : eur(shipping)}</dd></div>
           </dl>

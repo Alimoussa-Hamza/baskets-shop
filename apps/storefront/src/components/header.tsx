@@ -2,7 +2,7 @@ import Link from "next/link"
 import { SITE_NAME, FREE_SHIPPING_THRESHOLD } from "@/lib/site"
 import { GENRES, eur, productPath } from "@/lib/catalog"
 import { CATEGORY_LABEL } from "@/lib/content"
-import { listProducts } from "@/lib/medusa"
+import { listProducts, medusa } from "@/lib/medusa"
 import { CartLink } from "./cart-link"
 import { MobileMenu, type MenuSection } from "./mobile-menu"
 
@@ -20,11 +20,26 @@ async function menuSections(): Promise<MenuSection[]> {
   }))
 }
 
+type Campaign = { text: string; link: string | null; ends_at: string | null }
+// Bandeau d'offre géré dans l'admin (« Offre en cours ») ; relu toutes les minutes, jamais bloquant
+async function campaign(): Promise<Campaign | null> {
+  try { return (await medusa<{ campaign: Campaign | null }>("/store/campaign", { next: { revalidate: 60, tags: ["campaign"] } })).campaign }
+  catch { return null }
+}
+const endsLabel = (iso: string) => `jusqu'au ${new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" }).format(new Date(iso))}`
+
 export async function Header() {
-  const sections = await menuSections()
+  const [sections, offer] = await Promise.all([menuSections(), campaign()])
   const messages = [`Livraison offerte dès ${eur(FREE_SHIPPING_THRESHOLD).replace(",00", "")}`, "Retours sous 14 jours", "Guide des tailles en cm", "Paiement sécurisé"]
   return (
     <>
+      {offer && (
+        <div className="bg-accent px-4 py-2.5 text-center text-xs font-semibold uppercase tracking-[0.14em] text-white">
+          {offer.link
+            ? <Link href={offer.link} className="underline-offset-4 hover:underline">{offer.text} <span aria-hidden="true">→</span></Link>
+            : offer.text}
+          {offer.ends_at && <span className="ml-2 font-medium normal-case tracking-normal text-white/80">{endsLabel(offer.ends_at)}</span>}
+        </div>)}
       {/* Bandeau défilant (référence : Axel Arigato) ; contenu doublé pour une boucle continue, lu une seule fois */}
       <div className="overflow-hidden bg-[#e7ecff] py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-ink">
         <p className="sr-only">{messages.join(" · ")}</p>
