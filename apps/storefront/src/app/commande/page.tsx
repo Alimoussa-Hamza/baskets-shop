@@ -5,6 +5,7 @@ import { getCart } from "@/lib/cart-data"
 import { Checkout } from "@/components/checkout"
 import { OrderSummary } from "@/components/order-summary"
 import { STRIPE_PUBLISHABLE_KEY, TEST_PAYMENT } from "@/lib/site"
+import { longestDelivery } from "@/lib/catalog"
 
 export const metadata: Metadata = { title: "Commande", robots: { index: false } }
 export const dynamic = "force-dynamic"
@@ -12,6 +13,7 @@ export const dynamic = "force-dynamic"
 export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ paiement?: string }> }) {
   const { paiement } = await searchParams
   const cart = await getCart()
+  if (cart?.removed?.length) redirect(`/panier?retire=${encodeURIComponent(cart.removed.join(", "))}`) // le client voit ce qui a été retiré
   if (!cart || cart.items.length === 0) redirect("/panier")
   const a = cart.shipping_address
   return (
@@ -24,7 +26,8 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
           testPayment={TEST_PAYMENT}
           stripeKey={/^pk_(test|live)_\w{20,}$/.test(STRIPE_PUBLISHABLE_KEY) ? STRIPE_PUBLISHABLE_KEY : ""}
           total={cart.total}
-          initial={{ email: cart.email ?? "", first_name: a?.first_name ?? "", last_name: a?.last_name ?? "", address_1: a?.address_1 ?? "", postal_code: a?.postal_code ?? "", city: a?.city ?? "" }}
+          delivery={longestDelivery(cart.items.map((i) => i.product?.metadata))}
+          initial={{ email: cart.email ?? "", first_name: a?.first_name ?? "", last_name: a?.last_name ?? "", address_1: a?.address_1 ?? "", postal_code: a?.postal_code ?? "", city: a?.city ?? "", phone: a?.phone ?? "" }}
         />
         <OrderSummary cart={cart} />
       </div>

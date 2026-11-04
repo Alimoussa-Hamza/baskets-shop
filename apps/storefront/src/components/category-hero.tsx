@@ -1,3 +1,4 @@
+import Image from "next/image"
 import Link from "next/link"
 import type { ReactNode } from "react"
 import { SneakerArt, tint } from "./sneaker-art"
@@ -5,7 +6,8 @@ import { eur, type Card } from "@/lib/catalog"
 
 export type Chip = { label: string; href: string; count: number; active?: boolean }
 
-// Bandeau d'en-tête des pages de listing : pleine largeur, teinte douce, illustration de basket, chiffres issus du catalogue.
+// Bandeau d'en-tête des pages de listing : pleine largeur, teinte douce, photo d'un produit du rayon (illustration à défaut),
+// chiffres issus du catalogue.
 // Les chiffres (modèles, tailles, prix) viennent des données : aucun texte éditorial inventé.
 export function CategoryHero({ crumbs, title, intro, cards, chips, color }: {
   crumbs: ReactNode; title: string; intro?: string; cards: Card[]; chips: Chip[]; color: string
@@ -40,7 +42,11 @@ export function CategoryHero({ crumbs, title, intro, cards, chips, color }: {
             </ul>)}
         </div>
         <div aria-hidden="true" className="hidden md:block">
-          <SneakerArt color={color === "#d9cdb8" ? "#f4f3ee" : "#ffffff"} className="w-full max-w-[420px] -rotate-6 drop-shadow-[0_24px_30px_rgba(17,17,17,0.25)]" />
+          {cards.find((c) => c.image) ? (
+            <div className="relative ml-auto aspect-square w-full max-w-[360px] overflow-hidden rounded-[24px] shadow-[0_24px_40px_rgba(17,17,17,0.18)]">
+              <Image src={cards.find((c) => c.image)!.image!} alt="" fill sizes="360px" className="object-cover" />
+            </div>
+          ) : <SneakerArt color={color === "#d9cdb8" ? "#f4f3ee" : "#ffffff"} className="w-full max-w-[420px] -rotate-6 drop-shadow-[0_24px_30px_rgba(17,17,17,0.25)]" />}
         </div>
       </div>
     </section>

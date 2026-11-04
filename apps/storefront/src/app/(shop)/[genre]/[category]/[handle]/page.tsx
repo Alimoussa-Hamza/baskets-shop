@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound, permanentRedirect } from "next/navigation"
 import { getProduct, listProducts } from "@/lib/medusa"
-import { GENRES, eur, minPrice, optionValue, productPath, toCard, genreSlug, compareAt } from "@/lib/catalog"
+import { GENRES, eur, minPrice, optionValue, productPath, toCard, genreSlug, compareAt, deliveryDays } from "@/lib/catalog"
 import { CATEGORY_LABEL } from "@/lib/content"
 import { ProductForm, type VariantLite } from "@/components/product-form"
 import { ProductImage } from "@/components/product-image"
@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   if (!p) return {}
   return pageMeta({
     title: `${p.title} – ${p.subtitle ?? "Baskets"}`,
-    description: `${p.title} à ${eur(minPrice(p))} : tailles ${GENRES[genreSlug(p.metadata?.gender)].label.toLowerCase()}, livraison 2 à 4 jours ouvrés, retours sous 14 jours.`,
+    description: `${p.title} à ${eur(minPrice(p))} : tailles ${GENRES[genreSlug(p.metadata?.gender)].label.toLowerCase()}, livraison ${deliveryDays(p.metadata)} jours ouvrés, retours sous 14 jours.`,
     path: productPath(p),
     images: (p.images ?? []).map((i) => i.url).slice(0, 1),
   })
@@ -55,6 +55,9 @@ export default async function ProductPage({ params }: P) {
   const brand = typeof p.metadata?.brand === "string" ? p.metadata.brand : "—"
   const others = (await listProducts()).filter((o) => o.id !== p.id && o.metadata?.gender === p.metadata?.gender).slice(0, 4)
   const images = (p.images ?? []).map((i) => i.url)
+  // Photo propre à chaque coloris (métadonnée « image » des variantes, posée à l'import CJ)
+  const byColor: Record<string, string> = {}
+  for (const v of p.variants ?? []) { const c = optionValue(v, "Couleur"); const img = v.metadata?.image; if (c && typeof img === "string" && !byColor[c]) byColor[c] = img }
 
   return (
     <>
@@ -77,22 +80,22 @@ export default async function ProductPage({ params }: P) {
       <ProductColorProvider initial={[...new Set(variants.map((v) => v.color))].find((c) => variants.some((v) => v.color === c && v.qty > 0)) ?? variants[0]?.color ?? null}>
       <div className="mt-6 grid gap-10 md:grid-cols-[1fr_340px] lg:grid-cols-[1fr_420px]">
         <div className="grid grid-cols-2 gap-3">
-          <div className="relative col-span-2 aspect-[4/5] overflow-hidden rounded-[12px]"><ProductMainImage src={images[0] ?? null} alt={p.title} /></div>
+          <div className="relative col-span-2 aspect-[4/5] overflow-hidden rounded-[12px]"><ProductMainImage src={images[0] ?? null} alt={p.title} byColor={byColor} /></div>
           {images.slice(1, 5).map((src, i) => <div key={src} className="relative aspect-[4/5] overflow-hidden rounded-[12px]"><ProductImage src={src} alt={`${p.title}, vue ${i + 2}`} sizes="30vw" /></div>)}
         </div>
 
         <div className="md:sticky md:top-24 md:self-start">
           <p className="text-xs uppercase tracking-[0.14em] text-muted">{p.subtitle}</p>
           <h1 className="mt-1 text-3xl font-bold">{p.title}</h1>
-          <ProductForm variants={variants} fitNote={fit} />
+          <ProductForm variants={variants} fitNote={fit} delivery={deliveryDays(p.metadata)} />
 
           <div className="mt-8 divide-y divide-line rounded-[12px] border border-line bg-white">
             <details open className="p-4"><summary className="cursor-pointer font-medium">Description</summary>
               <p className="mt-3 text-sm text-muted">{p.description ?? "Description à rédiger."}</p></details>
             <details className="p-4"><summary className="cursor-pointer font-medium">Caractéristiques</summary>
-              <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm"><dt className="text-muted">Marque</dt><dd>{brand}</dd><dt className="text-muted">Genre</dt><dd>{g.label}</dd><dt className="text-muted">Coupe</dt><dd>{fit ?? "—"}</dd></dl></details>
+              <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm">{brand !== "—" && <><dt className="text-muted">Marque</dt><dd>{brand}</dd></>}<dt className="text-muted">Rayon</dt><dd>{g.label}</dd>{fit && <><dt className="text-muted">Coupe</dt><dd>{fit}</dd></>}<dt className="text-muted">Pointures</dt><dd>{[...new Set(variants.map((v) => v.size))].sort((a, b) => Number(a) - Number(b)).filter((_, i, a) => i === 0 || i === a.length - 1).join(" à ")}</dd><dt className="text-muted">Livraison</dt><dd>{deliveryDays(p.metadata)} jours ouvrés</dd></dl></details>
             <details className="p-4"><summary className="cursor-pointer font-medium">Livraison et retours</summary>
-              <p className="mt-3 text-sm text-muted">Livraison en France sous 2 à 4 jours ouvrés. Vous disposez de 14 jours après réception pour vous rétracter : <Link href="/retractation" className="link">renoncer au contrat ici</Link>.</p></details>
+              <p className="mt-3 text-sm text-muted">Livraison en France sous {deliveryDays(p.metadata)} jours ouvrés. Vous disposez de 14 jours après réception pour vous rétracter : <Link href="/retractation" className="link">renoncer au contrat ici</Link>.</p></details>
           </div>
         </div>
       </div>

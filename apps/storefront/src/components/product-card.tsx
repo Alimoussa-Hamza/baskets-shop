@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { COLOR_HEX, discountPct, eur, type Card } from "@/lib/catalog"
+import { swatch, discountPct, eur, type Card } from "@/lib/catalog"
 import { ProductImage } from "./product-image"
 
 // Carte sans cadre (références : Veja, Allbirds) : visuel sur fond uni, infos dessous ; la grille parente trace les filets.
@@ -24,7 +24,7 @@ export function ProductCard({ c, priority = false }: { c: Card; priority?: boole
           <p className="mt-0.5 text-sm text-muted">{c.subtitle}</p>
           <ul className="mt-3 flex gap-1.5" aria-label={`Couleurs : ${c.colors.join(", ")}`}>
             {c.colors.map((col) => (
-              <li key={col} title={col} className="h-3.5 w-3.5 rounded-full border border-black/20" style={{ background: COLOR_HEX[col] ?? "#ccc" }} />
+              <li key={col} title={col} className="h-3.5 w-3.5 rounded-full border border-black/20" style={{ background: swatch(col) }} />
             ))}
           </ul>
         </div>

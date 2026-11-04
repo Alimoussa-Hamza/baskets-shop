@@ -30,7 +30,7 @@ const endsLabel = (iso: string) => `jusqu'au ${new Intl.DateTimeFormat("fr-FR", 
 
 export async function Header() {
   const [sections, offer] = await Promise.all([menuSections(), campaign()])
-  const messages = [`Livraison offerte dès ${eur(FREE_SHIPPING_THRESHOLD).replace(",00", "")}`, "Retours sous 14 jours", "Guide des tailles en cm", "Paiement sécurisé"]
+  const messages = ["Réhausse invisible", `Livraison offerte dès ${eur(FREE_SHIPPING_THRESHOLD).replace(",00", "")}`, "Retours sous 14 jours", "Guide des tailles en cm", "Paiement sécurisé"]
   return (
     <>
       {offer && (
@@ -56,8 +56,9 @@ export async function Header() {
           <div className="flex items-center">
             <MobileMenu sections={sections} />
             <nav aria-label="Principal" className="hidden items-center gap-6 text-sm font-medium uppercase tracking-wide md:flex">
-              <Link href="/baskets-femme" className={navLink}>Femme</Link>
-              <Link href="/baskets-homme" className={navLink}>Homme</Link>
+              {sections.map((s) => <Link key={s.href} href={s.href} className={navLink}>Tous les modèles</Link>)}
+              {sections.flatMap((s) => s.links).map((l) => <Link key={l.href} href={l.href} className={navLink}>{l.label}</Link>)}
+              <Link href="/guide-des-tailles" className={navLink}>Guide des tailles</Link>
             </nav>
           </div>
           <Link href="/" className="font-display text-2xl font-bold tracking-tight" aria-label={`${SITE_NAME}, accueil`}>

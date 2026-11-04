@@ -7,6 +7,7 @@ import { applyPromo, updateLine } from "@/lib/cart-actions"
 import { eur } from "@/lib/catalog"
 import type { CartItem } from "@/lib/cart-data"
 import { ProductImage } from "./product-image"
+import { CART_CHANGED } from "./cart-link"
 
 export function CartLines({ items }: { items: CartItem[] }) {
   const router = useRouter()
@@ -15,7 +16,7 @@ export function CartLines({ items }: { items: CartItem[] }) {
   const [promo, setPromo] = useState("")
   const [promoOpen, setPromoOpen] = useState(false)
 
-  const change = (id: string, q: number) => start(async () => { const r = await updateLine(id, q); if (!r.ok) setError(r.error); else { setError(null); router.refresh() } })
+  const change = (id: string, q: number) => start(async () => { const r = await updateLine(id, q); if (!r.ok) setError(r.error); else { setError(null); router.refresh(); dispatchEvent(new Event(CART_CHANGED)) } })
   const submitPromo = (e: React.FormEvent) => { e.preventDefault(); start(async () => { const r = await applyPromo(promo); if (!r.ok) setError(r.error); else { setError(null); setPromo(""); router.refresh() } }) }
 
   return (

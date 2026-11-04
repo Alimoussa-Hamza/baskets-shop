@@ -1,14 +1,14 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import { COLOR_HEX, eur, type Card } from "@/lib/catalog"
+import { swatch, eur, type Card } from "@/lib/catalog"
 import { ProductCard } from "./product-card"
 
 type Sort = "pertinence" | "prix-asc" | "prix-desc"
 const PAGE = 12
 
 // Filtrage côté navigateur : aucune URL filtrée n'existe, donc rien à désindexer ; la page reste statique (ISR).
-// Les combinaisons à vraie demande (ex. /baskets-femme/running) sont de vraies catégories, avec leur propre texte.
+// Les combinaisons à vraie demande (ex. /baskets-rehaussantes/sport) sont de vraies catégories, avec leur propre texte.
 // Mobile et tablette : barre compacte + panneau (bas d'écran sur mobile, côté droit sur tablette). Ordinateur : colonne latérale.
 export function ProductGrid({ cards }: { cards: Card[] }) {
   const [size, setSize] = useState<string | null>(null)
@@ -72,7 +72,7 @@ export function ProductGrid({ cards }: { cards: Card[] }) {
           <h3 id={`${idp}-couleur`} className={heading}>Couleur</h3>
           <div className="mt-3 flex flex-wrap gap-2">{colors.map((c) => (
             <button key={c} type="button" aria-pressed={color === c} onClick={() => { setColor(color === c ? null : c); setShown(PAGE) }} className={colorChip(color === c)}>
-              <span aria-hidden="true" className="h-7 w-7 rounded-full border border-black/15" style={{ background: COLOR_HEX[c] ?? "#ccc" }} />{c}</button>))}
+              <span aria-hidden="true" className="h-7 w-7 rounded-full border border-black/15" style={{ background: swatch(c) }} />{c}</button>))}
           </div>
         </div>)}
       {hi > lo && (

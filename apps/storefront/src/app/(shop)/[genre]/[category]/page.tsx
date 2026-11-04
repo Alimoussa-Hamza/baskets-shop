@@ -44,7 +44,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ genre
         { name: "Accueil", url: SITE_URL }, { name: data.g.label, url: `${SITE_URL}/${genre}` },
         { name: label, url: `${SITE_URL}/${genre}/${category}` }])} />
       <CategoryHero
-        color={genre === "baskets-femme" ? "#d9cdb8" : "#1f4fff"}
+        color="#1f4fff"
         title={`${data.g.label} ${label.toLowerCase()}`} intro={CATEGORY_INTRO[`${genre}/${category}`]} cards={cards}
         crumbs={<><Link href="/" className="hover:text-accent">Accueil</Link> <span aria-hidden="true">›</span>{" "}
           <Link href={`/${genre}`} className="hover:text-accent">{data.g.label}</Link> <span aria-hidden="true">›</span> <span className="text-ink">{label}</span></>}

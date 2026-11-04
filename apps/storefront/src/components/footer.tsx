@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { SITE_NAME } from "@/lib/site"
+import { SITE_NAME, TAGLINE } from "@/lib/site"
 import { CookieSettingsButton } from "./cookie-banner"
 
 export function Footer() {
@@ -10,12 +10,13 @@ export function Footer() {
       <div className="mx-auto grid max-w-[1200px] gap-10 px-4 py-12 md:grid-cols-4">
         <div>
           <p className="font-display text-2xl font-bold">{SITE_NAME}<span className="text-accent">.</span></p>
-          <p className="mt-3 max-w-xs text-sm text-muted">Baskets homme et femme. Livraison en France.</p>
+          <p className="mt-3 max-w-xs text-sm text-muted">{TAGLINE}. Réhausse invisible, livraison en France.</p>
         </div>
         <nav aria-label="Boutique"><h2 className={h}>Boutique</h2>
           <ul className={col}>
-            <li><Link href="/baskets-femme" className="hover:text-accent">Baskets femme</Link></li>
-            <li><Link href="/baskets-homme" className="hover:text-accent">Baskets homme</Link></li>
+            <li><Link href="/baskets-rehaussantes" className="hover:text-accent">Toutes les baskets réhaussantes</Link></li>
+            <li><Link href="/baskets-rehaussantes/basses" className="hover:text-accent">Basses</Link></li>
+            <li><Link href="/baskets-rehaussantes/sport" className="hover:text-accent">Sport</Link></li>
             <li><Link href="/guide-des-tailles" className="hover:text-accent">Guide des tailles</Link></li>
           </ul></nav>
         <nav aria-label="Aide"><h2 className={h}>Aide</h2>

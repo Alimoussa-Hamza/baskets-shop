@@ -4,6 +4,7 @@ import { defineConfig, devices } from "@playwright/test"
 // Crée de vraies commandes dans la base locale : ne jamais pointer vers la production.
 export default defineConfig({
   testDir: ".",
+  testIgnore: ["qa/**"], // cahier de recette : playwright.qa.config.ts
   timeout: 120_000,
   expect: { timeout: 10_000 },
   workers: 1, // les deux appareils partagent la même base et le même Mailpit

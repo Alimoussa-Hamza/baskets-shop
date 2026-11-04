@@ -4,12 +4,12 @@ import Link from "next/link"
 import { useEffect, useMemo, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { addToCart } from "@/lib/cart-actions"
-import { COLOR_HEX, discountPct, eur } from "@/lib/catalog"
+import { colorParts, joinColor, swatch, discountPct, eur } from "@/lib/catalog"
 import { useProductColor } from "./product-color"
 
 export type VariantLite = { id: string; size: string; color: string; qty: number; price: number; compareAt: number | null }
 
-export function ProductForm({ variants, fitNote }: { variants: VariantLite[]; fitNote?: string }) {
+export function ProductForm({ variants, fitNote, delivery }: { variants: VariantLite[]; fitNote?: string; delivery: string }) {
   const router = useRouter()
   const [pending, start] = useTransition()
   const colors = useMemo(() => [...new Set(variants.map((v) => v.color))], [variants])
@@ -19,6 +19,22 @@ export function ProductForm({ variants, fitNote }: { variants: VariantLite[]; fi
   const [error, setError] = useState<string | null>(null)
   const { setColor: shareColor } = useProductColor()
   useEffect(() => shareColor(color), [color, shareColor]) // l'image principale suit la couleur choisie
+
+  // Coloris « Marron fourrée +8 cm » : couleur, version et réhausse se choisissent séparément
+  const current = colorParts(color)
+  const parts = useMemo(() => colors.map(colorParts), [colors])
+  const bases = useMemo(() => [...new Set(parts.map((p) => p.base))], [parts])
+  const finishes = useMemo(() => [...new Set(parts.map((p) => p.finish))], [parts])
+  const lifts = useMemo(() => [...new Set(parts.map((p) => p.lift).filter((l): l is string => !!l))].sort((a, b) => Number(a) - Number(b)), [parts])
+  // Change un seul critère ; si cette combinaison n'existe pas, garde au mieux les autres
+  const choose = (change: Partial<typeof current>) => {
+    const want = { ...current, ...change }
+    const key = Object.keys(change)[0] as keyof typeof current
+    const c = colors.find((x) => x === joinColor(want)) ?? colors.find((x, i) => parts[i][key] === want[key])
+    if (c) pick(c)
+  }
+  const exists = (change: Partial<typeof current>) => colors.includes(joinColor({ ...current, ...change }))
+  const pick = (c: string) => { setColor(c); setError(null); if (size && (find(size, c)?.qty ?? 0) < 1) setSize(null) }
 
   const find = (s: string, c = color) => variants.find((v) => v.size === s && v.color === c)
   const chosen = size ? find(size) : undefined
@@ -47,16 +63,46 @@ export function ProductForm({ variants, fitNote }: { variants: VariantLite[]; fi
       {ref && <p className="mt-1 text-xs text-muted">Prix barré : prix le plus bas pratiqué sur les 30 derniers jours.</p>}
 
       <fieldset className="mt-6">
-        <legend className="text-sm">Couleur : <span className="font-medium">{color}</span></legend>
+        <legend className="text-sm">Couleur : <span className="font-medium">{current.base}</span></legend>
         <div className="mt-2 flex gap-3">
-          {colors.map((c) => (
-            <button key={c} type="button" aria-pressed={c === color} aria-label={c} title={c}
-              onClick={() => { setColor(c); setError(null); if (size && (find(size, c)?.qty ?? 0) < 1) setSize(null) }}
-              className={`h-11 w-11 rounded-full border-2 p-1 ${c === color ? "border-accent" : "border-transparent"}`}>
-              <span className="block h-full w-full rounded-full border border-black/20" style={{ background: COLOR_HEX[c] ?? "#ccc" }} />
+          {bases.map((b) => (
+            <button key={b} type="button" aria-pressed={b === current.base} aria-label={b} title={b}
+              onClick={() => choose({ base: b })}
+              className={`h-11 w-11 rounded-full border-2 p-1 ${b === current.base ? "border-accent" : "border-transparent"}`}>
+              <span className="block h-full w-full rounded-full border border-black/20" style={{ background: swatch(b) }} />
             </button>))}
         </div>
       </fieldset>
+
+      {finishes.length > 1 && (
+        <fieldset className="mt-6">
+          <legend className="text-sm">Version : <span className="font-medium">{current.finish ? current.finish.replace(/^./, (x) => x.toUpperCase()) : "Standard"}</span></legend>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {finishes.map((f) => (
+              <button key={f ?? "standard"} type="button" aria-pressed={f === current.finish} disabled={!exists({ finish: f })}
+                onClick={() => choose({ finish: f })}
+                className={`h-11 rounded-[8px] border px-4 text-sm ${f === current.finish ? "border-accent font-semibold text-accent ring-1 ring-accent" : "border-line bg-white hover:border-ink"} disabled:cursor-not-allowed disabled:opacity-40`}>
+                {f ? f.replace(/^./, (x) => x.toUpperCase()) : "Standard"}
+              </button>))}
+          </div>
+        </fieldset>)}
+
+      {lifts.length > 0 && (
+        <fieldset className="mt-6">
+          <legend className="text-sm">Réhausse : <span className="font-medium">+{current.lift} cm</span></legend>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {lifts.map((l) => {
+              const missing = !exists({ lift: l })
+              return (
+                <button key={l} type="button" aria-pressed={l === current.lift} disabled={missing} aria-label={`Réhausse +${l} cm`}
+                  onClick={() => choose({ lift: l })}
+                  className={`h-11 min-w-16 rounded-[8px] border px-3 text-sm ${l === current.lift ? "border-accent font-semibold text-accent ring-1 ring-accent" : "border-line bg-white hover:border-ink"} ${missing ? "cursor-not-allowed opacity-40" : ""}`}>
+                  +{l} cm
+                </button>)
+            })}
+          </div>
+          <p className="mt-2 text-xs text-muted">Hauteur gagnée annoncée par le fabricant, semelle intérieure comprise.</p>
+        </fieldset>)}
 
       <fieldset className="mt-6">
         <div className="flex items-baseline justify-between">
@@ -82,7 +128,7 @@ export function ProductForm({ variants, fitNote }: { variants: VariantLite[]; fi
       {error && <p role="alert" className="mt-4 text-sm font-medium text-danger">{error}</p>}
       <button type="button" onClick={submit} disabled={pending} className="btn-primary mt-6 w-full">{pending ? "Ajout…" : "Ajouter au panier"}</button>
       <ul className="mt-4 flex justify-between border-t border-line pt-4 text-xs uppercase tracking-wide text-muted">
-        <li>Livraison 2-4 jours ouvrés</li><li>Retours sous 14 jours</li>
+        <li>Livraison {delivery.replace(" à ", "-")} jours ouvrés</li><li>Retours sous 14 jours</li>
       </ul>
     </div>
   )
