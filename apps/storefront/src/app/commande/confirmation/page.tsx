@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { getLastOrder } from "@/lib/cart-data"
-import { eur } from "@/lib/catalog"
+import { eur, longestDelivery } from "@/lib/catalog"
 
 export const metadata: Metadata = { title: "Commande enregistrée", robots: { index: false } }
 export const dynamic = "force-dynamic"
@@ -23,7 +23,7 @@ export default async function ConfirmationPage() {
       <div className="card mt-10 grid gap-8 p-6 md:grid-cols-2">
         <div><h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">Livraison</h2>
           <p className="mt-3 text-sm">{a?.first_name} {a?.last_name}<br />{a?.address_1}<br />{a?.postal_code} {a?.city}, France</p>
-          <p className="mt-3 text-sm text-muted">Estimation : 2 à 4 jours ouvrés</p></div>
+          <p className="mt-3 text-sm text-muted">Estimation : {longestDelivery(order.items.map((i) => i.product?.metadata))} jours ouvrés</p></div>
         <div><h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">Récapitulatif</h2>
           <ul className="mt-3 space-y-1 text-sm">{order.items.map((i) => <li key={i.id} className="flex justify-between gap-4"><span>{i.title} ({i.variant_title}) × {i.quantity}</span><span>{eur(i.total)}</span></li>)}
             {ship && <li className="flex justify-between"><span>{ship.name}</span><span>{ship.amount === 0 ? "Offerte" : eur(ship.amount)}</span></li>}</ul>

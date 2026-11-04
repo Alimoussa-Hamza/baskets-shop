@@ -7,6 +7,7 @@ export const ORDER_COOKIE = "last_order"
 export type CartItem = {
   id: string; title: string; variant_title?: string | null; quantity: number
   unit_price: number; total: number; thumbnail?: string | null; product_handle?: string | null
+  product?: { metadata?: Record<string, unknown> | null; status?: string } | null
 }
 export type Address = {
   first_name?: string | null; last_name?: string | null; address_1?: string | null
@@ -17,8 +18,9 @@ export type Cart = {
   item_total: number; total: number; tax_total: number; shipping_total: number; discount_total?: number
   shipping_methods?: { id: string; name: string; amount: number; shipping_option_id?: string | null }[]
   shipping_address?: Address | null
+  removed?: string[] // articles retirés du panier car plus en vente (produit dépublié depuis l'ajout)
 }
-export type OrderLine = { id: string; title: string; variant_title?: string | null; quantity: number; total: number }
+export type OrderLine = { id: string; title: string; variant_title?: string | null; quantity: number; total: number; product?: { metadata?: Record<string, unknown> | null } | null }
 export type Order = {
   id: string; display_id: number; email: string; total: number; tax_total: number; shipping_total: number
   items: OrderLine[]; shipping_address?: Address | null
@@ -26,17 +28,27 @@ export type Order = {
 }
 
 export const CART_FIELDS =
-  "*items,*shipping_methods,*shipping_address,+item_total,+total,+tax_total,+shipping_total,+discount_total"
+  "*items,*items.product,*shipping_methods,*shipping_address,+item_total,+total,+tax_total,+shipping_total,+discount_total"
 
 export async function getCart(): Promise<Cart | null> {
   const id = (await cookies()).get(CART_COOKIE)?.value
   if (!id) return null
   try {
-    const { cart } = await medusa<{ cart: Cart & { completed_at?: string | null } }>(
-      `/store/carts/${id}?fields=${encodeURIComponent(CART_FIELDS)},completed_at`,
+    // `n` : Next mémorise les GET identiques pendant un rendu ; la relecture après suppression doit être une vraie requête
+    const load = (n = 0) => medusa<{ cart: Cart & { completed_at?: string | null } }>(
+      `/store/carts/${id}?fields=${encodeURIComponent(CART_FIELDS)},completed_at${n ? ",+id" : ""}`,
       { cache: "no-store" },
     )
-    return cart.completed_at ? null : cart
+    let { cart } = await load()
+    if (cart.completed_at) return null
+    // Un produit dépublié (brouillon, retiré de la vente) ne doit pas pouvoir être commandé depuis un ancien panier
+    const gone = cart.items.filter((i) => i.product?.status && i.product.status !== "published")
+    if (gone.length) {
+      for (const i of gone) await medusa(`/store/carts/${id}/line-items/${i.id}`, { method: "DELETE" })
+      ;({ cart } = await load(1))
+      cart.removed = gone.map((i) => i.title)
+    }
+    return cart
   } catch (e) {
     if (e instanceof MedusaError) return null // panier expiré / introuvable : on repartira d'un nouveau
     throw e
@@ -49,7 +61,7 @@ export async function getLastOrder(): Promise<Order | null> {
   if (!id) return null
   try {
     const { order } = await medusa<{ order: Order }>(
-      `/store/orders/${id}?fields=id,display_id,email,total,tax_total,shipping_total,*items,*shipping_address,*shipping_methods`,
+      `/store/orders/${id}?fields=id,display_id,email,total,tax_total,shipping_total,*items,*items.product,*shipping_address,*shipping_methods`,
       { cache: "no-store" },
     )
     return order

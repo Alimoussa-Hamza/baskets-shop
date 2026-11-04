@@ -8,14 +8,23 @@ import { CartLines } from "@/components/cart-lines"
 export const metadata: Metadata = { title: "Votre panier", robots: { index: false } }
 export const dynamic = "force-dynamic"
 
-export default async function CartPage() {
+// Articles retirés automatiquement (produit plus en vente depuis l'ajout au panier)
+const Removed = ({ titles }: { titles?: string[] }) => titles?.length ? (
+  <p role="status" className="mb-6 rounded-[8px] border border-line bg-white p-4 text-sm">
+    {titles.length > 1 ? "Ces articles ne sont plus en vente et ont été retirés" : "Cet article n'est plus en vente et a été retiré"} de votre panier : <strong>{titles.join(", ")}</strong>.
+  </p>) : null
+
+export default async function CartPage({ searchParams }: { searchParams: Promise<{ retire?: string }> }) {
+  const { retire } = await searchParams
   const cart = await getCart()
+  if (cart && retire && !cart.removed) cart.removed = [retire.slice(0, 300)]
   if (!cart || cart.items.length === 0) {
     return (
       <section className="py-16 text-center">
+        <Removed titles={cart?.removed ?? (retire ? [retire.slice(0, 300)] : undefined)} />
         <h1 className="text-3xl font-bold">Votre panier est vide</h1>
-        <p className="mt-3 text-muted">Découvrez nos baskets pour femme et pour homme.</p>
-        <div className="mt-6 flex justify-center gap-3"><Link href="/baskets-femme" className="btn-primary">Baskets femme</Link><Link href="/baskets-homme" className="btn-secondary">Baskets homme</Link></div>
+        <p className="mt-3 text-muted">Découvrez nos baskets réhaussantes : quelques centimètres de plus, sans que ça se voie.</p>
+        <div className="mt-6 flex justify-center gap-3"><Link href="/baskets-rehaussantes" className="btn-primary">Voir les modèles</Link><Link href="/guide-des-tailles" className="btn-secondary">Guide des tailles</Link></div>
       </section>)
   }
   const chosen = cart.shipping_methods?.[0]
@@ -31,6 +40,7 @@ export default async function CartPage() {
 
   return (
     <>
+      <Removed titles={cart.removed} />
       <h1 className="text-4xl font-bold">Votre panier</h1>
       <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_380px]">
         <div>

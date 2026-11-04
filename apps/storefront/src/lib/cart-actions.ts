@@ -79,7 +79,7 @@ export async function applyPromo(code: string): Promise<Result> {
 }
 
 // ---------- Checkout
-export type Contact = { email: string; first_name: string; last_name: string; address_1: string; postal_code: string; city: string; phone?: string }
+export type Contact = { email: string; first_name: string; last_name: string; address_1: string; postal_code: string; city: string; phone: string }
 
 function validateContact(c: Contact): string | null {
   const t = (s: string, max = 120) => typeof s === "string" && s.trim().length > 0 && s.length <= max
@@ -87,6 +87,8 @@ function validateContact(c: Contact): string | null {
   if (!t(c.first_name, 60) || !t(c.last_name, 60)) return "Renseignez votre prénom et votre nom."
   if (!t(c.address_1, 160) || !t(c.city, 80)) return "Renseignez votre adresse et votre ville."
   if (!/^\d{5}$/.test(c.postal_code)) return "Le code postal doit comporter 5 chiffres."
+  // Exigé par les transporteurs (et l'API CJ : 6 à 32 chiffres)
+  if (!/^\+?[\d .-]{6,20}$/.test(c.phone?.trim() ?? "") || (c.phone.match(/\d/g) ?? []).length < 6) return "Renseignez un numéro de téléphone valide (pour le livreur)."
   return null
 }
 
@@ -95,7 +97,7 @@ export async function saveContact(c: Contact): Promise<Result> {
   if (!id) return { ok: false, error: "Votre panier est vide." }
   const err = validateContact(c)
   if (err) return { ok: false, error: err }
-  const addr = { first_name: c.first_name.trim(), last_name: c.last_name.trim(), address_1: c.address_1.trim(), postal_code: c.postal_code, city: c.city.trim(), country_code: "fr", phone: c.phone?.trim() || undefined }
+  const addr = { first_name: c.first_name.trim(), last_name: c.last_name.trim(), address_1: c.address_1.trim(), postal_code: c.postal_code, city: c.city.trim(), country_code: "fr", phone: c.phone.trim() }
   try {
     await medusa(`/store/carts/${id}`, { method: "POST", body: JSON.stringify({ email: c.email.trim(), shipping_address: addr, billing_address: addr }) })
     return { ok: true }

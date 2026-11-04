@@ -9,7 +9,7 @@ import { eur } from "@/lib/catalog"
 
 type Step = 1 | 2 | 3
 
-export function Checkout({ initial, total, testPayment, stripeKey }: { initial: Contact; total: number; testPayment: boolean; stripeKey: string }) {
+export function Checkout({ initial, total, testPayment, stripeKey, delivery }: { initial: Contact; total: number; testPayment: boolean; stripeKey: string; delivery: string }) {
   const router = useRouter()
   const [pending, start] = useTransition()
   const [step, setStep] = useState<Step>(1)
@@ -97,6 +97,8 @@ export function Checkout({ initial, total, testPayment, stripeKey }: { initial: 
               <div><label className="label" htmlFor="zip">Code postal</label><input id="zip" className="field" inputMode="numeric" autoComplete="postal-code" maxLength={5} required value={c.postal_code} onChange={set("postal_code")} /></div>
               <div><label className="label" htmlFor="city">Ville</label><input id="city" className="field" autoComplete="address-level2" required value={c.city} onChange={set("city")} /></div>
             </div>
+            <div><label className="label" htmlFor="phone">Téléphone</label><input id="phone" className="field" type="tel" inputMode="tel" autoComplete="tel" required maxLength={20} value={c.phone} onChange={set("phone")} />
+              <p className="mt-1 text-xs text-muted">Uniquement pour le livreur, en cas de besoin.</p></div>
             <div><label className="label" htmlFor="country">Pays</label><select id="country" className="field" disabled><option>France</option></select>
               <p className="mt-1 text-xs text-muted">Livraison en France uniquement pour le moment.</p></div>
             {error && step === 1 && <p role="alert" className="text-sm font-medium text-danger">{error}</p>}
@@ -123,7 +125,7 @@ export function Checkout({ initial, total, testPayment, stripeKey }: { initial: 
         {heading(3, "Paiement sécurisé")}
         {step === 3 && (() => {
           const legal = (<>
-            <p className="text-sm text-muted">Livraison estimée sous 2 à 4 jours ouvrés. Vous disposez de 14 jours à compter de la réception pour exercer votre droit de rétractation (<Link href="/retractation" target="_blank" className="link">renoncer au contrat ici</Link>).</p>
+            <p className="text-sm text-muted">Livraison estimée sous {delivery} jours ouvrés. Vous disposez de 14 jours à compter de la réception pour exercer votre droit de rétractation (<Link href="/retractation" target="_blank" className="link">renoncer au contrat ici</Link>).</p>
             <label className="flex items-start gap-3 text-sm"><input type="checkbox" className="mt-1 h-5 w-5" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} />
               <span>J'ai lu et j'accepte les <Link href="/cgv" target="_blank" className="link">conditions générales de vente</Link> et la <Link href="/confidentialite" target="_blank" className="link">politique de confidentialité</Link>.</span></label>
             {error && <p role="alert" className="text-sm font-medium text-danger">{error}</p>}
