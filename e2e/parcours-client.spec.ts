@@ -45,14 +45,14 @@ test("parcours client complet", async ({ page }, info) => {
     const burger = page.getByRole("button", { name: "Ouvrir le menu" }) // téléphone : menu latéral
     if (await burger.isVisible()) {
       await burger.click()
-      await page.getByRole("dialog", { name: "Menu" }).getByRole("link", { name: "Femme", exact: true }).click()
-    } else await page.getByRole("banner").getByRole("link", { name: /femme/i }).first().click()
-    await expect(page.getByRole("heading", { level: 1, name: "Baskets femme" })).toBeVisible()
+      await page.getByRole("dialog", { name: "Menu" }).getByRole("link", { name: "Réhaussantes", exact: true }).click()
+    } else await page.getByRole("banner").getByRole("link", { name: "Tous les modèles" }).click()
+    await expect(page.getByRole("heading", { level: 1, name: "Baskets réhaussantes" })).toBeVisible()
     const filters = await openFilters(page)
-    await filters.getByRole("button", { name: "38", exact: true }).click()
+    await filters.getByRole("button", { name: "40", exact: true }).click()
     const close = filters.getByRole("button", { name: /^Voir/ })
     if (await close.isVisible()) await close.click()
-    await expect(page.getByRole("button", { name: "Retirer le filtre Taille 38" })).toBeVisible()
+    await expect(page.getByRole("button", { name: "Retirer le filtre Taille 40" })).toBeVisible()
     await page.getByRole("combobox").selectOption("prix-asc")
     const prices = (await page.locator("article p.whitespace-nowrap").allTextContents()).map(price)
     expect(prices.length).toBeGreaterThan(0)
@@ -61,7 +61,7 @@ test("parcours client complet", async ({ page }, info) => {
 
   await test.step("fiche produit : pointure obligatoire, puis ajout au panier", async () => {
     await page.locator("article a").first().click()
-    await expect(page).toHaveURL(/\/baskets-femme\/[^/]+\/[^/]+$/)
+    await expect(page).toHaveURL(/\/baskets-rehaussantes\/[^/]+\/[^/]+$/)
     await page.getByRole("button", { name: /ajouter au panier/i }).click()
     await expect(page.getByRole("alert").filter({ hasText: "Choisissez une taille" })).toBeVisible()
     // Pointure en stock confortable : le panier teste ensuite +1 paire (chaque exécution consomme du stock local)
@@ -90,6 +90,7 @@ test("parcours client complet", async ({ page }, info) => {
     await page.getByLabel("Adresse de livraison").fill("10 rue de la Paix")
     await page.getByLabel("Code postal").fill("75002")
     await page.getByLabel("Ville").fill("Paris")
+    await page.getByLabel("Téléphone").fill("06 12 34 56 78")
     await page.getByRole("button", { name: /continuer vers la livraison/i }).click()
     await page.getByRole("button", { name: /continuer vers le paiement/i }).click()
   })

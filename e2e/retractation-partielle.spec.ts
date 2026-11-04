@@ -28,8 +28,8 @@ test("renoncer à un article sur deux, puis au reste", async ({ page }) => {
   const refuse = page.getByRole("button", { name: "Tout refuser" })
   if (await refuse.isVisible()) await refuse.click()
 
-  await addPair(page, "/baskets-homme/urbaines/heritage-black")
-  await addPair(page, "/baskets-homme/running/stride-run")
+  await addPair(page, "/baskets-rehaussantes/basses/baskets-rehaussantes-semelle-epaisse-homme")
+  await addPair(page, "/baskets-rehaussantes/sport/baskets-sport-rehaussantes-homme")
   await page.getByRole("link", { name: "Commander" }).or(page.getByRole("button", { name: "Commander" })).first().click()
   await page.getByLabel("Adresse e-mail").fill(email)
   await page.getByLabel("Prénom").fill("Camille")
@@ -37,6 +37,7 @@ test("renoncer à un article sur deux, puis au reste", async ({ page }) => {
   await page.getByLabel("Adresse de livraison").fill("10 rue de la Paix")
   await page.getByLabel("Code postal").fill("75002")
   await page.getByLabel("Ville").fill("Paris")
+  await page.getByLabel("Téléphone").fill("06 12 34 56 78")
   await page.getByRole("button", { name: /continuer vers la livraison/i }).click()
   await page.getByRole("button", { name: /continuer vers le paiement/i }).click()
   const fake = page.getByRole("radio", { name: /Paiement factice/ })
@@ -56,29 +57,29 @@ test("renoncer à un article sur deux, puis au reste", async ({ page }) => {
     await expect(page.getByRole("heading", { name: "Étape 2 sur 2 : confirmer" })).toBeVisible()
   }
 
-  await test.step("1re demande : seulement Heritage Black", async () => {
+  await test.step("1re demande : seulement Baskets réhaussantes semelle épaisse", async () => {
     await identify()
     await page.getByRole("radio", { name: /Certains articles/ }).check()
     await expect(page.getByRole("button", { name: "Confirmer la rétractation" })).toBeDisabled()
-    await page.getByRole("checkbox", { name: /Heritage Black/ }).check()
+    await page.getByRole("checkbox", { name: /Baskets réhaussantes semelle épaisse/ }).check()
     await page.getByRole("button", { name: "Confirmer la rétractation" }).click()
     const status = page.getByRole("status")
     await expect(status.getByRole("heading", { name: "Rétractation enregistrée" })).toBeVisible()
-    await expect(status).toContainText("Heritage Black")
-    await expect(status).not.toContainText("Stride Run")
+    await expect(status).toContainText("Baskets réhaussantes semelle épaisse")
+    await expect(status).not.toContainText("Baskets sport réhaussantes")
     const mail = await mailText(email, /rétractation/i)
-    expect(mail).toContain("Heritage Black")
-    expect(mail).not.toContain("Stride Run")
+    expect(mail).toContain("Baskets réhaussantes semelle épaisse")
+    expect(mail).not.toContain("Baskets sport réhaussantes")
   })
 
-  await test.step("2e demande : Heritage Black signalé, « toute la commande » = Stride Run seul", async () => {
+  await test.step("2e demande : Baskets réhaussantes semelle épaisse signalé, « toute la commande » = Baskets sport réhaussantes seul", async () => {
     await identify()
     await expect(page.getByText("Déjà rétracté")).toHaveCount(1)
     await expect(page.getByText("1 article", { exact: true })).toBeVisible()
     await page.getByRole("button", { name: "Confirmer la rétractation" }).click()
     const status = page.getByRole("status")
-    await expect(status).toContainText("Stride Run")
-    await expect(status).not.toContainText("Heritage Black")
+    await expect(status).toContainText("Baskets sport réhaussantes")
+    await expect(status).not.toContainText("Baskets réhaussantes semelle épaisse")
   })
 
   await test.step("3e demande : tout est déjà rétracté", async () => {

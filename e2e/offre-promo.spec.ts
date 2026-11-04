@@ -8,7 +8,7 @@ test.beforeEach(({}, info) => test.skip(info.project.name !== "ordinateur", "un 
 const euros = (s: string | null) => Number((s ?? "").replace(/[^\d,]/g, "").replace(",", "."))
 
 test("prix barré conforme et code promo : le récapitulatif du panier est exact", async ({ page }) => {
-  await page.goto("/baskets-femme/skate/rose-lune")
+  await page.goto("/baskets-rehaussantes/basses/baskets-rehaussantes-cuir-homme")
   const struck = page.locator("main s").first()
   if (await struck.isVisible()) {
     const ref = euros(await struck.textContent())
@@ -24,7 +24,8 @@ test("prix barré conforme et code promo : le récapitulatif du panier est exact
   await page.getByRole("button", { name: /Code promotionnel/ }).click()
   await page.getByLabel("Code promotionnel").fill("NOEL10")
   await page.getByRole("button", { name: "Appliquer" }).click()
-  await page.waitForTimeout(1500)
+  // Attendre le récapitulatif recalculé (réduction affichée ou code refusé), pas un délai fixe
+  await expect(page.getByRole("complementary", { name: "Récapitulatif" }).getByText("Réduction").or(page.getByText("Ce code n'est pas valide."))).toBeVisible({ timeout: 20_000 })
 
   const summary = page.getByRole("complementary", { name: "Récapitulatif" })
   const line = async (label: string) => euros(await summary.locator("div").filter({ has: page.locator("dt", { hasText: label }) }).locator("dd").textContent().catch(() => "0"))
