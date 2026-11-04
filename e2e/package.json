@@ -4,7 +4,9 @@
   "scripts": {
     "e2e": "playwright test",
     "e2e:report": "playwright show-report",
-    "install-browser": "playwright install chromium"
+    "install-browser": "playwright install chromium",
+    "qa": "playwright test -c playwright.qa.config.ts",
+    "qa:report": "playwright show-report qa-report"
   },
   "devDependencies": {
     "@playwright/test": "1.48.2"
