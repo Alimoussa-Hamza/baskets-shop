@@ -1,14 +1,14 @@
 import type { Metadata } from "next"
 import "./globals.css"
-import { SITE_NAME, SITE_URL } from "@/lib/site"
+import { SITE_NAME, SITE_URL, TAGLINE } from "@/lib/site"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { CookieBanner } from "@/components/cookie-banner"
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: `${SITE_NAME} – Baskets homme et femme`, template: `%s | ${SITE_NAME}` },
-  description: "Baskets homme et femme. Guide des tailles en cm, livraison en France, retours sous 14 jours.",
+  title: { default: `${SITE_NAME} – ${TAGLINE}`, template: `%s | ${SITE_NAME}` },
+  description: "Baskets réhaussantes pour homme : gagnez des centimètres avec une réhausse invisible. Livraison en France, retours sous 14 jours.",
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

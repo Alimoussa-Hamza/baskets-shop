@@ -72,10 +72,25 @@ Décision du 29/10/2026 : CJdropshipping pour démarrer, **uniquement des modèl
 - **CJ** : commandes créées avec `payType=3` (création seule) : **aucun paiement automatique**, validation et paiement dans l'espace CJ. `CJ_SANDBOX=1` pour les essais. Limite API : 1 appel/s. Jeton : 180 jours, gardé en mémoire.
 - **Admin** : page « Commandes fournisseur » (`src/admin/routes/supplier-orders`) ; saisie du suivi → e-mail « votre commande est en route » au client. Routes : `GET /admin/supplier-orders`, `POST /admin/supplier-orders/:id/ship`, `POST /admin/supplier-orders/:id/retry`.
 - **Testé en local le 29/10/2026** : transmission par e-mail (Mailpit), coût d'achat, saisie du suivi + e-mail client, idempotence, erreur CJ sans clé. **Non testé** : appel réel à l'API CJ (pas de compte), webhooks CJ.
-- **Import du catalogue CJ** (02/11/2026) : page admin « Import CJ ». Recherche dans le stock de l'entrepôt du fournisseur CJ (`GET /product/listV2`, `countryCode` = pays du fournisseur), aperçu, puis import **en brouillon** (`src/lib/cj-import.ts`). Règles (`src/lib/cj-catalog.ts`, testées) : pointure EU obligatoire, couleur traduite en français, seul le stock de cet entrepôt compte, prix TTC = coût × `CJ_PRICE_COEF` (2,5) arrondi en …9 €, **noms de grandes marques refusés** (contrefaçon). Photos copiées dans notre stockage (une URL CJ révélerait le fournisseur). Prix d'achat et `vid` CJ → `supplier_variant`. Titre et description arrivent en anglais : à réécrire avant publication.
+- **Import du catalogue CJ** (02/11/2026) : page admin « Import CJ ». Constat : CJ n'a quasiment **aucune basket en entrepôt UE** (2 en DE, 0 en FR/ES) ; le catalogue (~3 750 modèles) est en **stock usine en Chine** → fournisseur « CJ Chine » (pays `cn`, transporteur `CJPacket Ordinary`, ~10 € de port par paire, 4 à 10 jours de transport). Recherche par catégorie CJ (`GET /product/list`, triée par nombre de boutiques revendeuses ; le filtre pays de `/product/listV2` renvoie toujours 0). Fiche : `/product/query` (sans stock) + `/product/stock/getInventoryByPid` (stock par variante). Port : `POST /logistic/freightCalculate`. Import **en brouillon** (`src/lib/cj-import.ts`), règles testées (`src/lib/cj-catalog.ts`) : pointure EU obligatoire (« 42 », « EU42 », « Size42 »), couleurs traduites et combinées (« Noir/Blanc »), matière ajoutée seulement pour départager (« Leather » → « aspect cuir », jamais « cuir » : c'est souvent du PU), **noms de grandes marques refusés**. Prix TTC = coût de revient (achat + port + 3 € de douane hors UE) × `CJ_PRICE_COEF` (2), arrondi en …9 €. Coût de revient et `vid` → `supplier_variant`. Délai annoncé (transport + 3 jours) → métadonnée produit `delivery_days`, affichée sur la fiche, au paiement et à la confirmation. Photos copiées dans notre stockage. Titres et descriptions arrivent en anglais : à réécrire.
+- **Commande CJ** : téléphone du client obligatoire (demandé au checkout) ; option IOSS obligatoire depuis la Chine (`CJ_IOSS_TYPE` : 3 = IOSS de CJ par défaut, 2 = le vôtre) **à valider avec le comptable**. Testé le 02/11/2026 en sandbox : commande acceptée par CJ (référence SD…).
 - **Stock CJ** : job `sync-cj-stock` toutes les 6 h (`GET /product/stock/queryByVid`, ~1 s par variante), recopié dans le dépôt « Fournisseur UE (dropshipping) ». Sans `CJ_API_KEY` : aucun effet.
 - **Admin** (29/10/2026) : page « Fournisseurs » (création, modification, désactivation ; transporteur obligatoire pour CJ) et encart « Fournisseur » sur la fiche produit (fournisseur, référence et prix d'achat HT par variante, marge par paire à TVA 20 %). Routes : `GET/POST /admin/suppliers`, `POST /admin/suppliers/:id`, `POST /admin/products/:id/supplier`. Medusa fusionne les métadonnées : une clé est supprimée en l'envoyant vide.
 - **Reste** : import du catalogue CJ, synchro stock/prix planifiée, récupération automatique du suivi (webhook CJ).
+
+## 5 ter. Niche : baskets réhaussantes homme (04/11/2026)
+
+Une seule niche, un seul client (homme 18-40 ans) : des baskets au look normal avec une semelle réhaussante intérieure.
+Choisie sur données CJ (1 052 modèles analysés) : running, plateforme et confort sont saturés ou concurrencés par
+Temu/Shein ; les réhaussantes ont peu de concurrence chez CJ et se vendent 90-200 € chez les marques spécialisées.
+
+- Rayon unique `GENRES` = `/baskets-rehaussantes`, catégories `basses` et `sport` ; les anciens produits sont en brouillon.
+- La réhausse annoncée par le fabricant fait partie du coloris CJ (« White Height Increased By 8 ») : l'import l'écrit
+  « Blanc +8 cm » (`LIFT` dans `cj-catalog.ts`), la fiche produit la propose comme un choix séparé (`colorParts`),
+  les listes et filtres ne montrent que la couleur.
+- Hauteurs toujours « annoncées par le fabricant » tant qu'elles n'ont pas été mesurées sur échantillon (pratique trompeuse sinon).
+- Modèles refusés : copies de silhouettes déposées (Air Force 1, Dunk, Valentino Rockstud, bande Gucci), logos sur photos.
+- À faire : semelles réhaussantes seules en vente additionnelle (pas de pointure EU chez CJ : autre type de fiche).
 
 ## 6. Paiement et stock
 

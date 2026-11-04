@@ -7,11 +7,21 @@ const config: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
   images: {
-    formats: ["image/avif", "image/webp"],
+    // WebP seul : l'encodage AVIF est très coûteux en CPU (serveur saturé constaté le 02/11/2026 avec ~150 photos produit)
+    formats: ["image/webp"],
+    // Dev seulement : photos servies par le backend local (localhost:9000), refusées par défaut depuis Next 16 (anti-SSRF)
+    dangerouslyAllowLocalIP: process.env.NODE_ENV !== "production",
     remotePatterns: [
       ...(mediaHost ? [{ protocol: "https" as const, hostname: mediaHost }] : []),
       ...(process.env.NODE_ENV !== "production" ? [{ protocol: "http" as const, hostname: "localhost", port: "9000" }] : []),
     ],
+  },
+  // Anciens rayons (avant la niche « baskets réhaussantes », 04/11/2026) : favoris et liens externes ne tombent pas en 404
+  async redirects() {
+    return [
+      { source: "/baskets-femme/:path*", destination: "/baskets-rehaussantes", permanent: true },
+      { source: "/baskets-homme/:path*", destination: "/baskets-rehaussantes", permanent: true },
+    ]
   },
   async headers() {
     return [

@@ -8,3 +8,5 @@ export const TEST_PAYMENT = process.env.NODE_ENV !== "production" && process.env
 // Paiement par carte : actif dès que la clé publiable Stripe est fournie (clés TEST hors production).
 export const STRIPE_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? ""
 export const STRIPE_PROVIDER = "pp_stripe_stripe"
+// Niche : une seule promesse partout (titres, partage, pied de page)
+export const TAGLINE = "Baskets réhaussantes pour homme"

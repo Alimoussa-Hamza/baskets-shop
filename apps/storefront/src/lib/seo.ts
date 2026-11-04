@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
-import { SITE_NAME, SITE_URL } from "./site"
+import { SITE_NAME, SITE_URL, TAGLINE } from "./site"
 
-const DEFAULT_IMAGE = { url: "/opengraph-image", width: 1200, height: 630, alt: `${SITE_NAME} – Baskets homme et femme` }
+const DEFAULT_IMAGE = { url: "/opengraph-image", width: 1200, height: 630, alt: `${SITE_NAME} – ${TAGLINE}` }
 
 // Next fusionne les métadonnées de façon superficielle : un openGraph de page remplace entièrement celui du layout.
 // Chaque page indexable passe donc par ce socle commun (canonical, Open Graph, Twitter) pour ne rien perdre au partage.

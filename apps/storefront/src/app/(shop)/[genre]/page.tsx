@@ -35,7 +35,7 @@ export default async function GenrePage({ params }: { params: Promise<{ genre: s
         { "@type": "ListItem", position: 1, name: "Accueil", item: SITE_URL },
         { "@type": "ListItem", position: 2, name: g.label, item: `${SITE_URL}/${genre}` }] }} />
       <CategoryHero
-        color={genre === "baskets-femme" ? "#d9cdb8" : "#1f4fff"}
+        color="#1f4fff"
         title={g.label} intro={GENRE_INTRO[genre]} cards={cards}
         crumbs={<><Link href="/" className="hover:text-accent">Accueil</Link> <span aria-hidden="true">›</span> <span className="text-ink">{g.label}</span></>}
         chips={cats.map((c) => ({ label: CATEGORY_LABEL[c] ?? c, href: `/${genre}/${c}`, count: products.filter((p) => p.categories?.some((x) => x.handle === c)).length }))} />
