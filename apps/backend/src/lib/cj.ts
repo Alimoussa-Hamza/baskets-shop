@@ -22,7 +22,8 @@ async function call<T>(path: string, body: unknown, auth = true, method: "GET" |
   const url = method === "GET" ? `${BASE}${path}?${new URLSearchParams(body as Record<string, string>)}` : `${BASE}${path}`
   const res = await fetch(url, { method, headers, body: method === "POST" ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(20_000) })
   const json = (await res.json().catch(() => null)) as CjResponse<T> | null
-  if (!res.ok || !json?.result || json.code !== 200) {
+  // code 200 = succès ; « result » manque sur certaines réponses réussies (getInventoryByPid, constaté le 02/11/2026)
+  if (!res.ok || json?.code !== 200) {
     throw new CjError(`CJ ${path} : ${json?.message ?? `HTTP ${res.status}`}`, json?.code, json?.requestId)
   }
   return json.data as T
@@ -45,6 +46,15 @@ export type CjOrderInput = {
   products: { vid: string; quantity: number; storeLineItemId: string }[]
 }
 
+// TVA à l'import (envoi hors UE vers l'UE, ≤ 150 €) : CJ exige une option IOSS. CJ_IOSS_TYPE : 2 = votre propre
+// numéro IOSS (CJ_IOSS_NUMBER), 3 = IOSS de CJ (par défaut). Choix à valider avec le comptable. Sans objet depuis l'UE.
+const EU = new Set(["AT", "BE", "BG", "CY", "CZ", "DE", "DK", "EE", "ES", "FI", "FR", "GR", "HR", "HU", "IE", "IT", "LT", "LU", "LV", "MT", "NL", "PL", "PT", "RO", "SE", "SI", "SK"])
+function ioss(fromCountryCode: string) {
+  if (EU.has(fromCountryCode.toUpperCase())) return {}
+  if (process.env.CJ_IOSS_TYPE === "2") return { iossType: 2, iossNumber: process.env.CJ_IOSS_NUMBER ?? "" }
+  return { iossType: 3, iossNumber: "CJ-IOSS" }
+}
+
 export async function createCjOrder(o: CjOrderInput): Promise<{ orderId: string | null; orderStatus: string | null }> {
   const s = o.shipping
   const data = await call<{ orderId?: string; orderStatus?: string }>("/shopping/order/createOrderV2", {
@@ -55,23 +65,26 @@ export async function createCjOrder(o: CjOrderInput): Promise<{ orderId: string 
     shippingCustomerName: s.name, shippingPhone: s.phone ?? "", email: s.email ?? "",
     fromCountryCode: o.fromCountryCode, logisticName: o.logisticName,
     payType: 3, isSandbox: process.env.CJ_SANDBOX === "1" ? 1 : 0, platform: "Api",
+    ...ioss(o.fromCountryCode),
     products: o.products,
   })
   // orderId peut être vide (cf. doc) : CJ le communique alors par webhook.
   return { orderId: data?.orderId || null, orderStatus: data?.orderStatus || null }
 }
 
-// --- Catalogue (GET /product/listV2 et /product/query, doc consultée le 02/11/2026)
+// --- Catalogue (doc consultée le 02/11/2026). Recherche via GET /product/list : son filtre countryCode marche ;
+// celui de /product/listV2 (pourtant « recommandé ») renvoie 0 résultat pour tous les pays (constaté le 02/11/2026).
 
-export type CjSearchHit = { id: string; nameEn: string; bigImage: string; sellPrice: string | number; warehouseInventoryNum?: number; listedNum?: number }
+export type CjSearchHit = { pid: string; productNameEn: string; productImage: string; sellPrice: string | number; listedNum?: number }
 
-/** Recherche de produits ayant du stock dans l'entrepôt du pays donné (ex. DE, FR). */
-export async function searchCjProducts(q: { keyWord: string; countryCode: string; page?: number; size?: number }) {
-  const data = await call<{ totalRecords: number; content: { productList: CjSearchHit[] }[] }>("/product/listV2", {
-    keyWord: q.keyWord, countryCode: q.countryCode, startWarehouseInventory: "1",
-    page: String(q.page ?? 1), size: String(q.size ?? 20),
+/** Recherche par catégorie CJ et/ou nom (en anglais) dans le stock de l'entrepôt du pays donné (ex. DE, CN). */
+// Tri par nombre de boutiques qui vendent déjà le produit (listedNum) : un premier indice de qualité.
+export async function searchCjProducts(q: { keyWord?: string; categoryId?: string; countryCode: string; page?: number; size?: number }) {
+  const data = await call<{ total: number; list: CjSearchHit[] }>("/product/list", {
+    ...(q.keyWord ? { productNameEn: q.keyWord } : {}), ...(q.categoryId ? { categoryId: q.categoryId } : {}),
+    countryCode: q.countryCode, orderBy: "listedNum", sort: "desc", pageNum: String(q.page ?? 1), pageSize: String(q.size ?? 40),
   }, true, "GET")
-  return { total: data?.totalRecords ?? 0, products: (data?.content ?? []).flatMap((c) => c.productList ?? []) }
+  return { total: data?.total ?? 0, products: data?.list ?? [] }
 }
 
 export type CjVariant = {
@@ -83,12 +96,26 @@ export type CjProduct = {
   description: string | null; variants: CjVariant[]
 }
 
-/** Fiche produit, variantes limitées à celles stockées dans le pays donné. */
-export const getCjProduct = (pid: string, countryCode: string) =>
-  call<CjProduct>("/product/query", { pid, countryCode }, true, "GET")
+/** Fiche produit avec le stock de chaque variante. /product/query ne renvoie pas le stock (inventories = null,
+ *  constaté le 02/11/2026) : il vient de /product/stock/getInventoryByPid. Stock « usine » compris. */
+export async function getCjProduct(pid: string): Promise<CjProduct> {
+  const product = await call<CjProduct>("/product/query", { pid }, true, "GET")
+  const inv = await call<{ variantInventories?: { vid: string; inventory: { countryCode: string; totalInventory: number }[] }[] }>(
+    "/product/stock/getInventoryByPid", { pid }, true, "GET")
+  const byVid = new Map((inv?.variantInventories ?? []).map((v) => [v.vid, v.inventory ?? []]))
+  return { ...product, variants: (product.variants ?? []).map((v) => ({ ...v, inventories: byVid.get(v.vid) ?? [] })) }
+}
 
 /** Stock d'une variante dans l'entrepôt d'un pays (GET /product/stock/queryByVid). */
 export async function cjStock(vid: string, countryCode: string): Promise<number> {
   const rows = await call<{ countryCode: string; totalInventoryNum: number }[]>("/product/stock/queryByVid", { vid }, true, "GET")
   return (rows ?? []).filter((r) => r.countryCode?.toUpperCase() === countryCode.toUpperCase()).reduce((s, r) => s + (Number(r.totalInventoryNum) || 0), 0)
+}
+
+/** Frais de port CJ pour 1 unité d'une variante (USD) et délai de transport en jours (« 4-10 »), par transporteur. */
+export async function cjFreight(vid: string, fromCountry: string, toCountry: string) {
+  const rows = await call<{ logisticName: string; logisticPrice: number; logisticAging: string }[]>("/logistic/freightCalculate", {
+    startCountryCode: fromCountry.toUpperCase(), endCountryCode: toCountry.toUpperCase(), products: [{ quantity: 1, vid }],
+  })
+  return rows ?? []
 }

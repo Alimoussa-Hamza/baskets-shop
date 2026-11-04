@@ -78,7 +78,7 @@ const ProductSupplierWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
           <Table.Header><Table.Row>
             <Table.HeaderCell>Variante</Table.HeaderCell>
             <Table.HeaderCell>{chosen?.integration === "cj" ? "Réf. CJ (vid)" : "Réf. fournisseur"}</Table.HeaderCell>
-            <Table.HeaderCell>Prix d'achat HT (€)</Table.HeaderCell>
+            <Table.HeaderCell>Coût de revient HT (€)</Table.HeaderCell>
             <Table.HeaderCell>Marge / paire</Table.HeaderCell>
           </Table.Row></Table.Header>
           <Table.Body>
@@ -96,7 +96,7 @@ const ProductSupplierWidget = ({ data }: DetailWidgetProps<AdminProduct>) => {
             })}
           </Table.Body>
         </Table>)}
-      {supplierId !== NONE && <Text size="xsmall" className="text-ui-fg-subtle px-6 py-3">Marge avant frais de port, paiement et retours, avec TVA à 20 %. Le business plan vise environ 21 € par commande après ces frais.</Text>}
+      {supplierId !== NONE && <Text size="xsmall" className="text-ui-fg-subtle px-6 py-3">Coût de revient = achat + port fournisseur + douane éventuelle. Marge avant frais de paiement et retours, avec TVA à 20 %. Le business plan vise environ 21 € par commande après ces frais.</Text>}
     </Container>
   )
 }

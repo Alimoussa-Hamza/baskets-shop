@@ -8,7 +8,8 @@ import { api, eurCents } from "../../lib/api"
 // entrepôt européen, aperçu (pointures, couleurs, coût, prix de vente), puis import en BROUILLON à relire.
 type Supplier = { id: string; name: string; country: string; integration: "email" | "cj"; active: boolean }
 type Hit = { pid: string; name: string; image: string; stock: number | null; listed: number | null; cost_eur: number | null; blocked_brand: string | null }
-type PlanVariant = { vid: string; size: string; color: string; stock: number; costCents: number; priceEur: number }
+type PlanVariant = { vid: string; size: string; color: string; stock: number; costCents: number; landedCents: number; priceEur: number }
+type Shipping = { shippingEur: number; deliveryDays: string | null }
 type Plan = { title: string; images: string[]; sizes: string[]; colors: string[]; variants: PlanVariant[]; skipped: string[] } | { error: string }
 type Category = { id: string; name: string }
 
@@ -16,13 +17,14 @@ const VAT = 1.2
 
 function PreviewDrawer({ hit, supplier, categories, onClose }: { hit: Hit; supplier: Supplier; categories: Category[]; onClose: () => void }) {
   const [plan, setPlan] = useState<Plan | null>(null)
+  const [shipping, setShipping] = useState<Shipping | null>(null)
   const [already, setAlready] = useState(false)
   const [gender, setGender] = useState<"female" | "male">("female")
   const [category, setCategory] = useState(categories[0]?.id ?? "")
   const [busy, setBusy] = useState(false)
   useEffect(() => {
-    api<{ plan: Plan; already_imported: boolean }>(`/cj/products/${hit.pid}?supplier_id=${supplier.id}`)
-      .then((r) => { setPlan(r.plan); setAlready(r.already_imported) })
+    api<{ plan: Plan; shipping: Shipping; already_imported: boolean }>(`/cj/products/${hit.pid}?supplier_id=${supplier.id}`)
+      .then((r) => { setPlan(r.plan); setShipping(r.shipping); setAlready(r.already_imported) })
       .catch((e) => setPlan({ error: e.message }))
   }, [hit.pid, supplier.id])
 
@@ -45,6 +47,7 @@ function PreviewDrawer({ hit, supplier, categories, onClose }: { hit: Hit; suppl
           {plan && !("error" in plan) && <>
             <div className="flex gap-2 overflow-x-auto">{plan.images.slice(0, 6).map((u) => <img key={u} src={u} alt="" className="h-24 w-24 rounded object-cover" />)}</div>
             {already && <Badge color="orange">Déjà importé</Badge>}
+            {shipping && <Text size="small">Port CJ vers la France : <strong>{eurCents(Math.round(shipping.shippingEur * 100))}</strong> par paire · délai annoncé au client : <strong>{shipping.deliveryDays ?? "?"} jours</strong></Text>}
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-y-1">
                 <Label weight="plus">Rayon</Label>
@@ -64,17 +67,17 @@ function PreviewDrawer({ hit, supplier, categories, onClose }: { hit: Hit; suppl
             <Table>
               <Table.Header><Table.Row>
                 <Table.HeaderCell>Pointure</Table.HeaderCell><Table.HeaderCell>Couleur</Table.HeaderCell><Table.HeaderCell>Stock {supplier.country.toUpperCase()}</Table.HeaderCell>
-                <Table.HeaderCell>Achat HT</Table.HeaderCell><Table.HeaderCell>Vente TTC</Table.HeaderCell><Table.HeaderCell>Marge / paire</Table.HeaderCell>
+                <Table.HeaderCell>Achat</Table.HeaderCell><Table.HeaderCell>Revient</Table.HeaderCell><Table.HeaderCell>Vente TTC</Table.HeaderCell><Table.HeaderCell>Marge / paire</Table.HeaderCell>
               </Table.Row></Table.Header>
               <Table.Body>{plan.variants.map((v) => (
                 <Table.Row key={v.vid}>
                   <Table.Cell>{v.size}</Table.Cell><Table.Cell>{v.color}</Table.Cell><Table.Cell>{v.stock}</Table.Cell>
-                  <Table.Cell>{eurCents(v.costCents)}</Table.Cell><Table.Cell>{eurCents(v.priceEur * 100)}</Table.Cell>
-                  <Table.Cell>{eurCents(Math.round((v.priceEur / VAT) * 100) - v.costCents)}</Table.Cell>
+                  <Table.Cell>{eurCents(v.costCents)}</Table.Cell><Table.Cell>{eurCents(v.landedCents)}</Table.Cell><Table.Cell>{eurCents(v.priceEur * 100)}</Table.Cell>
+                  <Table.Cell>{eurCents(Math.round((v.priceEur / VAT) * 100) - v.landedCents)}</Table.Cell>
                 </Table.Row>))}
               </Table.Body>
             </Table>
-            <Text size="xsmall" className="text-ui-fg-subtle">Marge avant frais de port, de paiement et retours (TVA 20 %). Prix de vente = achat × coefficient (CJ_PRICE_COEF), modifiable ensuite dans la fiche produit.</Text>
+            <Text size="xsmall" className="text-ui-fg-subtle">Revient = achat + port CJ + douane (3 € hors UE). Marge = vente HT (TVA 20 %) − revient, avant frais de paiement et retours. Prix de vente = revient × coefficient (CJ_PRICE_COEF), modifiable ensuite dans la fiche produit.</Text>
             {plan.skipped.length > 0 && <details><summary className="text-ui-fg-subtle cursor-pointer text-sm">{plan.skipped.length} variante(s) écartée(s)</summary><ul className="text-ui-fg-subtle mt-1 list-disc pl-5 text-xs">{plan.skipped.map((s) => <li key={s}>{s}</li>)}</ul></details>}
           </>}
         </Drawer.Body>
@@ -91,7 +94,10 @@ const ImportCjPage = () => {
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [supplierId, setSupplierId] = useState("")
-  const [q, setQ] = useState("sneakers")
+  const [q, setQ] = useState("")
+  const [category, setCategory] = useState("femme")
+  const [cats, setCats] = useState<{ key: string; label: string }[]>([])
+  const [page, setPage] = useState(1)
   const [hits, setHits] = useState<Hit[] | null>(null)
   const [total, setTotal] = useState(0)
   const [busy, setBusy] = useState(false)
@@ -102,17 +108,18 @@ const ImportCjPage = () => {
       .then(([s, c]) => {
         const cj = s.suppliers.filter((x) => x.integration === "cj" && x.active)
         setSuppliers(cj); setSupplierId(cj[0]?.id ?? ""); setCategories(c.product_categories)
+        if (cj[0]) api<{ categories: { key: string; label: string }[] }>(`/cj/products?supplier_id=${cj[0].id}`).then((r) => setCats(r.categories))
       }).catch((e) => toast.error("Chargement impossible", { description: e.message }))
   }, [])
   const supplier = suppliers.find((s) => s.id === supplierId)
 
-  const search = async (e?: React.FormEvent) => {
+  const search = async (e?: React.FormEvent, p = 1) => {
     e?.preventDefault()
     if (!supplier) return
     setBusy(true)
     try {
-      const r = await api<{ total: number; products: Hit[] }>(`/cj/products?supplier_id=${supplier.id}&q=${encodeURIComponent(q)}`)
-      setHits(r.products); setTotal(r.total)
+      const r = await api<{ total: number; products: Hit[] }>(`/cj/products?supplier_id=${supplier.id}&category=${category}&q=${encodeURIComponent(q)}&page=${p}`)
+      setHits(r.products); setTotal(r.total); setPage(p)
     } catch (err) { toast.error("Recherche CJ impossible", { description: (err as Error).message }) } finally { setBusy(false) }
   }
 
@@ -134,9 +141,16 @@ const ImportCjPage = () => {
                 <Select.Content>{suppliers.map((s) => <Select.Item key={s.id} value={s.id}>{s.name} ({s.country.toUpperCase()})</Select.Item>)}</Select.Content>
               </Select>
             </div>
+            <div className="flex flex-col gap-y-1">
+              <Label weight="plus">Catégorie CJ</Label>
+              <Select value={category} onValueChange={setCategory}>
+                <Select.Trigger className="w-56"><Select.Value /></Select.Trigger>
+                <Select.Content>{cats.map((c) => <Select.Item key={c.key} value={c.key}>{c.label}</Select.Item>)}</Select.Content>
+              </Select>
+            </div>
             <div className="flex flex-1 flex-col gap-y-1">
-              <Label weight="plus" htmlFor="q">Recherche (en anglais)</Label>
-              <Input id="q" value={q} onChange={(e) => setQ(e.target.value)} placeholder="white sneakers women" />
+              <Label weight="plus" htmlFor="q">Mot-clé, en anglais (facultatif)</Label>
+              <Input id="q" value={q} onChange={(e) => setQ(e.target.value)} placeholder="white, mesh, platform…" />
             </div>
             <Button type="submit" isLoading={busy}>Rechercher</Button>
           </form>
@@ -144,7 +158,7 @@ const ImportCjPage = () => {
       </Container>
       {hits && (
         <Container className="p-0">
-          <Text size="small" className="text-ui-fg-subtle px-6 py-3">{total} résultat(s) avec du stock en {supplier?.country.toUpperCase()}</Text>
+          <Text size="small" className="text-ui-fg-subtle px-6 py-3">{total} résultat(s) avec du stock en {supplier?.country.toUpperCase()}, les plus vendus d'abord · page {page}</Text>
           <div className="grid grid-cols-2 gap-4 px-6 pb-6 md:grid-cols-4">
             {hits.map((h) => (
               <button key={h.pid} type="button" onClick={() => setOpen(h)} disabled={!!h.blocked_brand}
@@ -153,11 +167,15 @@ const ImportCjPage = () => {
                 <Text size="xsmall" className="line-clamp-2">{h.name}</Text>
                 <div className="flex items-center justify-between">
                   <Text size="small" weight="plus">{h.cost_eur ? `${h.cost_eur.toFixed(2).replace(".", ",")} € HT` : "—"}</Text>
-                  {h.stock !== null && <Text size="xsmall" className="text-ui-fg-subtle">{h.stock} en stock</Text>}
+                  {h.listed ? <Text size="xsmall" className="text-ui-fg-subtle">vendu par {h.listed} boutiques</Text> : null}
                 </div>
                 {h.blocked_brand && <Badge color="red" size="2xsmall">Marque « {h.blocked_brand} » : refusé</Badge>}
               </button>
             ))}
+          </div>
+          <div className="flex justify-between px-6 pb-4">
+            <Button size="small" variant="secondary" disabled={page <= 1 || busy} onClick={() => search(undefined, page - 1)}>← Précédents</Button>
+            <Button size="small" variant="secondary" disabled={page * 40 >= total || busy} onClick={() => search(undefined, page + 1)}>Suivants →</Button>
           </div>
         </Container>
       )}
